@@ -8,5 +8,6 @@ if __name__ == "__main__":
     print("MIMIT current snapshot synchronized")
     for key, value in result.items():
         print(f"{key}: {value}")
+    print(f"tracked_stations: {state.get('tracked_station_rows', 0)}")
     print(f"local_history_days: {state.get('history_days', 0)}")
     print(f"local_history_range: {state.get('history_start')} .. {state.get('history_end')}")
