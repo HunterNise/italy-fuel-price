@@ -13,6 +13,19 @@ formal semantic-version tags. Semver becomes the canonical version scheme from
 ### Planned
 - Evaluate route-aware fuel-stop planning without coupling it to the station-map core.
 
+## [0.8.4] - 2026-09-19
+
+### Changed
+- Simplified the top control panel by removing the label-density and fit-radius controls.
+- Compact/collapsed top panel is smaller; language/help/expand buttons move below the title/context summary.
+- `Show` is now the single visibility control: the map markers, ranking rows and histogram always use the same shown station subset.
+- `Show` defaults to `all`; old 0.8.3 browser preferences are migrated while resetting only this visibility default.
+- Histogram now describes the shown subset rather than hidden stations.
+- Savings and price percentiles continue to use the broader freshness-filtered local population as their reference.
+- Price labels are automatic: persistent at closer zoom levels or when at most 12 stations are shown, hover-only otherwise.
+- Fit-radius moved into the map navigation pad as a maximize control and now keeps the search point centered while choosing the tightest zoom that fits the radius.
+- Selected stations use a soft halo and are brought to the front instead of receiving a thick square-like outline.
+
 ## [0.8.3] - 2026-09-19
 
 ### Added

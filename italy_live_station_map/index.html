@@ -18,9 +18,11 @@
       <div class="collapsed-summary" id="collapsedSummary" aria-live="polite"></div>
     </div>
     <div class="head-spacer"></div>
-    <button class="icon-btn lang-btn" id="langToggle" title="Language"></button>
-    <button class="icon-btn" id="helpBtn" title="Help / shortcuts">?</button>
-    <button class="icon-btn" id="collapseControls" title="Collapse controls">▴</button>
+    <div class="panel-actions">
+      <button class="icon-btn lang-btn" id="langToggle" title="Language"></button>
+      <button class="icon-btn" id="helpBtn" title="Help / shortcuts">?</button>
+      <button class="icon-btn" id="collapseControls" title="Collapse controls">▴</button>
+    </div>
   </div>
 
   <div id="controlBody" class="control-body">
@@ -46,7 +48,6 @@
         <input id="radius" type="range" min="1" max="25" step="1" value="5"/>
         <span id="radiusValue" class="control-value">5 km</span>
       </label>
-      <button class="action-btn compact-action" id="fitRadius" type="button" data-i18n="fitRadius">Fit radius</button>
       <label><span data-i18n="fill">Fill</span>
         <input id="fillLitres" type="range" min="10" max="100" step="5" value="50"/>
         <span id="fillLitresValue" class="control-value">50 L</span>
@@ -56,13 +57,6 @@
     <div class="row">
       <label><span data-i18n="freshness">Freshness</span>
         <select id="maxAgeDays"><option value="all" data-i18n="all">all</option><option value="1">≤1 day</option><option value="2">≤2 days</option><option value="3" selected>≤3 days</option><option value="5">≤5 days</option><option value="7">≤7 days</option></select>
-      </label>
-      <label><span data-i18n="labels">Labels</span>
-        <select id="labelMode">
-          <option value="all" data-i18n="labelsAll">All</option>
-          <option value="cheapest" selected data-i18n="labelsCheapest">Cheapest</option>
-          <option value="hover" data-i18n="labelsHover">Hover</option>
-        </select>
       </label>
       <button class="action-btn" id="refresh" data-i18n="refresh">Refresh map</button>
       <button class="action-btn" id="sync" data-i18n="syncCurrent">Sync current snapshot</button>
@@ -83,7 +77,7 @@
     <div class="rank-sub" data-i18n="rankSubtitle">Price ranking ignores brands/ratings. Distance is straight-line from the selected point.</div>
     <div class="rank-controls">
       <label><span data-i18n="sort">Sort</span><select id="rankSort"><option value="price" data-i18n="price">Price</option><option value="distance" data-i18n="distance">Distance</option><option value="saving" data-i18n="savings">Savings vs median</option></select></label>
-      <label><span data-i18n="show">Show</span><select id="rankLimit"><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="all" data-i18n="all">all</option></select></label>
+      <label><span data-i18n="show">Show</span><select id="rankLimit"><option value="all" selected data-i18n="all">all</option><option value="50">50</option><option value="25">25</option><option value="10">10</option></select></label>
     </div>
     <div class="dist-box">
       <div class="dist-head"><span class="dist-title" data-i18n="distribution">Current price distribution</span><span class="dist-spread" id="distSpread"></span></div>
@@ -103,7 +97,7 @@
 </div>
 
 <div class="navpad">
-  <button class="blank">·</button><button data-pan="up" title="W / ↑">↑</button><button data-zoom="in" title="+">+</button>
+  <button id="fitRadiusNav" data-fit-radius="1" title="Fit radius" aria-label="Fit radius">⛶</button><button data-pan="up" title="W / ↑">↑</button><button data-zoom="in" title="+">+</button>
   <button data-pan="left" title="A / ←">←</button><button data-recenter="1" title="0">◎</button><button data-pan="right" title="D / →">→</button>
   <button class="blank">·</button><button data-pan="down" title="S / ↓">↓</button><button data-zoom="out" title="−">−</button>
 </div>
@@ -119,13 +113,10 @@
     <p data-i18n="guideIntro">Search for a place, click the map, or use your browser location to choose the centre point. The dashed circle is the active search radius.</p>
 
     <h3 data-i18n="guideDataTitle">Prices and ranking</h3>
-    <p data-i18n="guideData">Choose fuel, service mode, freshness and label density. The map and ranking use the same filtered station set. “Show” changes only how many ranking rows are displayed; the histogram always describes all filtered stations.</p>
+    <p data-i18n="guideData">Choose fuel, service mode and freshness, then use “Show” to choose how many of the currently ranked stations are visible. The map markers, ranking rows and histogram always use that same shown subset.</p>
 
     <h3 data-i18n="guideReadTitle">Reading and selecting stations</h3>
-    <p data-i18n="guideRead">Click a map marker or ranking row to select the same station in both views. The selected marker becomes larger and the ranking row is highlighted. “Fit radius” frames the complete search circle.</p>
-
-    <h3 data-i18n="labelsHelpTitle">Price labels</h3>
-    <p data-i18n="labelsHelp">All shows every price label, Cheapest keeps labels for roughly the cheapest 30% of filtered stations, and Hover keeps the map clean until you point at a marker. At close zoom levels all labels are shown automatically.</p>
+    <p data-i18n="guideRead">Click a map marker or ranking row to select the same station in both views. The selected station is brought above nearby markers with a subtle halo. Use the ⛶ map button to centre and maximize the active search radius in the current map viewport. Price labels appear automatically when the map is sufficiently close, or when only a small number of stations is shown.</p>
 
     <h3 data-i18n="historyTitle">History</h3>
     <p data-i18n="historyHelp">The 7/30/90-day views read only dates already stored in the local SQLite database. Sync adds the newest official snapshot only. The current nationwide snapshot is not retained day-by-day; history is kept only for stations in areas you view, so disk use stays small.</p>

@@ -1,6 +1,6 @@
 # Italy live station-price map
 
-**Version 0.8.3**
+**Version 0.8.4**
 
 A local interactive map for Italian fuel-station prices using official MIMIT
 station and price data.
@@ -93,13 +93,23 @@ future releases.
 ## UI state and compact view
 
 The browser remembers the selected location/centre, fuel, service mode, search
-radius, fill size, freshness, ranking controls, label-density mode and panel
-collapsed states. The collapsed top panel keeps a compact location/settings
-summary so screenshots remain self-describing.
+radius, fill size, freshness, ranking sort/limit and panel collapsed states.
 
-Price labels can be set to `All`, `Cheapest`, or `Hover`. `Cheapest` keeps
-permanent labels for roughly the cheapest 30% of currently filtered stations;
-at close zoom all labels reappear automatically.
+The collapsed top panel is a compact screenshot-oriented context card. It keeps
+the location plus fuel/service/radius/freshness/fill summary, with the
+language/help/expand controls underneath.
 
-`Fit radius` frames the active search circle. Clicking a marker highlights the
-matching ranking row, and clicking a ranking row selects the marker.
+`Show` is the single station-visibility control. Its default is `all`; selecting
+50, 25 or 10 limits the **ranking, map markers and histogram together** according
+to the current sort order.
+
+Price labels are automatic: they remain permanently visible at closer zoom
+levels or when no more than 12 stations are shown; otherwise they appear on
+hover.
+
+The `⛶` button in the map navigation cluster centres the selected search point
+and chooses the tightest zoom that fits the complete radius circle in the map
+viewport.
+
+Clicking a marker or ranking row selects the same station in both views. The
+selected map marker is brought above nearby markers and receives a subtle halo.
