@@ -1,6 +1,6 @@
 # Italy live station-price map
 
-**Version 0.8.5**
+**Version 0.8.6**
 
 A local interactive map for Italian fuel-station prices using official MIMIT
 station and price data.
@@ -121,3 +121,14 @@ Browser reloads or rapidly superseded map requests can close an HTTP socket afte
 the local server has already finished the station query. These disconnects are
 now ignored as normal client cancellation rather than logged as backend 502
 errors. Identical station requests are also deduplicated while in flight.
+
+## UI caching
+
+From 0.8.6 onward the local server sends the application shell and local static
+assets with `Cache-Control: no-store`.  It also ignores conditional browser cache
+headers for those paths, and the HTML references CSS/JS with a versioned query
+string.
+
+This is intentionally separate from UI preferences: fuel, radius, location,
+sort, panel state, and related choices remain in browser `localStorage`.  The
+application code itself is not retained there.

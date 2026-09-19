@@ -13,6 +13,16 @@ formal semantic-version tags. Semver becomes the canonical version scheme from
 ### Planned
 - Evaluate route-aware fuel-stop planning without coupling it to the station-map core.
 
+## [0.8.6] - 2026-09-19
+
+### Fixed
+- Disabled HTTP caching for the local application shell (`/`, `index.html`, and `static/`) so overwritten UI patches are loaded immediately instead of being hidden behind `304 Not Modified` responses.
+- Ignore `If-Modified-Since` / `If-None-Match` for local UI assets, preventing a browser from continuing to render an older interface after an upgrade.
+- Added the application version as a cache-busting query string on `styles.css` and `app.js`.
+
+### Clarified
+- Browser `localStorage` still intentionally retains user UI preferences; this is separate from static-file caching and does not retain old application code.
+
 ## [0.8.5] - 2026-09-19
 
 ### Fixed

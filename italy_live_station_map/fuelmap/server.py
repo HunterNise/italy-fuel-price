@@ -13,6 +13,32 @@ from .config import DB, ROOT
 
 
 class Handler(SimpleHTTPRequestHandler):
+    def _is_ui_asset(self) -> bool:
+        path = urllib.parse.urlparse(self.path).path
+        return path in ("/", "/index.html") or path.startswith("/static/")
+
+    def send_head(self):
+        # This is a local application, not a CDN-backed website.  UI files are
+        # tiny, and stale JS/CSS is much more confusing than the bandwidth saved
+        # by conditional 304 responses.  Ignore conditional-cache headers for
+        # the app shell and static assets so an overwritten patch is visible on
+        # the next reload.
+        if self._is_ui_asset():
+            for header in ("If-Modified-Since", "If-None-Match"):
+                if header in self.headers:
+                    del self.headers[header]
+        return super().send_head()
+
+    def end_headers(self):
+        if self._is_ui_asset():
+            self.send_header(
+                "Cache-Control",
+                "no-store, no-cache, must-revalidate, max-age=0",
+            )
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Expires", "0")
+        super().end_headers()
+
     def translate_path(self, path):
         """Serve only files contained inside the project root."""
         relative = Path(urllib.parse.urlparse(path).path.lstrip("/"))
