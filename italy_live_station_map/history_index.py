@@ -4,13 +4,13 @@ from __future__ import annotations
 import argparse
 import csv
 import io
-import sqlite3
 import tarfile
 import urllib.request
 from datetime import datetime
 from pathlib import Path
 
-from serve_map import CACHE, DB, init_db, parse_extract_date
+from fuelmap import __version__, db, mimit
+from fuelmap.config import CACHE
 
 ARCHIVE_URL = (
     "https://opendatacarburanti.mise.gov.it/"
@@ -30,58 +30,42 @@ def ingest_stream(binary, label="<stream>"):
     if not first:
         return 0
 
-    observed_date = parse_extract_date(first)
+    observed_date = mimit.parse_extract_date(first)
     reader = csv.DictReader(txt, delimiter=delimiter_for(observed_date))
     fields = {str(x).strip().lower(): x for x in (reader.fieldnames or [])}
 
-    required = [
-        "idimpianto",
-        "desccarburante",
-        "prezzo",
-        "isself",
-        "dtcomu",
-    ]
-    if not all(k in fields for k in required):
+    required = ["idimpianto", "desccarburante", "prezzo", "isself", "dtcomu"]
+    if not all(key in fields for key in required):
         raise ValueError(f"{label}: unexpected header {reader.fieldnames!r}")
 
-    init_db()
-    con = sqlite3.connect(DB)
-    now = datetime.now().isoformat(timespec="seconds")
-    sql = """
-      INSERT OR REPLACE INTO prices
-      (station_id,observed_date,fuel,is_self,price,communicated_at,source,captured_at)
-      VALUES(?,?,?,?,?,?,?,?)
-    """
-
+    captured_at = datetime.now().isoformat(timespec="seconds")
     batch = []
     count = 0
+
     for row in reader:
         try:
-            item = (
-                str(row[fields["idimpianto"]]).strip(),
-                observed_date,
-                str(row[fields["desccarburante"]]).strip(),
-                int(str(row[fields["isself"]]).strip()),
-                float(str(row[fields["prezzo"]]).strip().replace(",", ".")),
-                str(row[fields["dtcomu"]]).strip(),
-                "mimit_08_archive",
-                now,
+            batch.append(
+                (
+                    str(row[fields["idimpianto"]]).strip(),
+                    observed_date,
+                    str(row[fields["desccarburante"]]).strip(),
+                    int(str(row[fields["isself"]]).strip()),
+                    float(str(row[fields["prezzo"]]).strip().replace(",", ".")),
+                    str(row[fields["dtcomu"]]).strip(),
+                    "mimit_08_archive",
+                    captured_at,
+                )
             )
         except Exception:
             continue
 
-        batch.append(item)
         if len(batch) >= 10000:
-            con.executemany(sql, batch)
-            count += len(batch)
+            count += db.insert_archive_rows(batch)
             batch = []
 
     if batch:
-        con.executemany(sql, batch)
-        count += len(batch)
+        count += db.insert_archive_rows(batch)
 
-    con.commit()
-    con.close()
     print(f"{observed_date}: indexed {count:,} rows from {label}")
     return count
 
@@ -103,43 +87,26 @@ def index_archive(path):
     path = Path(path)
     total = 0
     files = 0
-
-    with tarfile.open(path, "r:gz") as tf:
-        for member in tf:
+    with tarfile.open(path, "r:gz") as archive:
+        for member in archive:
             if not member.isfile() or not member.name.lower().endswith(".csv"):
                 continue
-
-            f = tf.extractfile(member)
-            if f is None:
+            source = archive.extractfile(member)
+            if source is None:
                 continue
-
             try:
-                total += ingest_stream(f, member.name)
+                total += ingest_stream(source, member.name)
                 files += 1
-            except Exception as e:
-                print("SKIP", member.name, e)
-
+            except Exception as exc:
+                print("SKIP", member.name, exc)
     print(f"Archive complete: {files} CSV files, {total:,} rows")
 
 
 def coverage():
-    init_db()
-    con = sqlite3.connect(DB)
-    rows = con.execute(
-        """
-        SELECT source,MIN(observed_date),MAX(observed_date),
-               COUNT(*),COUNT(DISTINCT observed_date)
-        FROM prices
-        GROUP BY source
-        ORDER BY source
-        """
-    ).fetchall()
-    con.close()
-
+    rows = db.history_coverage()
     if not rows:
         print("history database is empty")
         return
-
     for source, start, end, count, days in rows:
         print(
             f"{source:20s} {start} .. {end} | "
@@ -148,21 +115,24 @@ def coverage():
 
 
 def main():
-    p = argparse.ArgumentParser(
-        description="Optional: index completed MIMIT quarterly station-price archives. The live map does not need this for current snapshots."
+    parser = argparse.ArgumentParser(
+        description=(
+            "Optional: index completed MIMIT quarterly station-price archives. "
+            "The live map does not need this for current snapshots."
+        )
     )
-    sub = p.add_subparsers(dest="cmd", required=True)
+    parser.add_argument("--version", action="version", version=__version__)
+    sub = parser.add_subparsers(dest="cmd", required=True)
 
-    d = sub.add_parser("download-and-index")
-    d.add_argument("year", type=int)
-    d.add_argument("quarter", type=int, choices=[1, 2, 3, 4])
+    command = sub.add_parser("download-and-index")
+    command.add_argument("year", type=int)
+    command.add_argument("quarter", type=int, choices=[1, 2, 3, 4])
 
-    i = sub.add_parser("index-archive")
-    i.add_argument("path")
+    command = sub.add_parser("index-archive")
+    command.add_argument("path")
 
     sub.add_parser("coverage")
-
-    args = p.parse_args()
+    args = parser.parse_args()
 
     if args.cmd == "download-and-index":
         index_archive(download_quarter(args.year, args.quarter))

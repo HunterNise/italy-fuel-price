@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-from serve_map import init_db, sync_current, sync_state
+from fuelmap import __version__
+from fuelmap import db, mimit
 
 if __name__ == "__main__":
-    init_db()
-    result = sync_current(save_raw=True)
-    state = sync_state()
+    db.init_db()
+    result = mimit.sync_current(save_raw=True)
+    state = db.sync_state()
+    print(f"Italy Fuel Price Map {__version__}")
     print("MIMIT current snapshot synchronized")
     for key, value in result.items():
         print(f"{key}: {value}")
