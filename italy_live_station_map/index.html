@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>MIMIT fuel prices</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="/static/styles.css?v=0.8.9"/>
+<link rel="stylesheet" href="/static/styles.css?v=0.8.10"/>
 </head>
 <body>
 <div id="map"></div>
@@ -13,8 +13,10 @@
 <div class="panel" id="controlPanel">
   <div class="panel-head">
     <div class="panel-identity">
-      <div class="title" data-i18n="title">MIMIT station prices</div>
-      <div class="hint panel-subtitle" data-i18n="subtitle">official daily data, joined locally</div>
+      <div class="panel-title-line">
+        <div class="title" data-i18n="title">MIMIT station prices</div>
+        <div class="hint panel-subtitle" data-i18n="subtitle">official daily data, joined locally</div>
+      </div>
       <div class="collapsed-summary" id="collapsedSummary" aria-live="polite"></div>
     </div>
     <div class="head-spacer"></div>
@@ -85,10 +87,11 @@
           <option value="10">10</option>
         </select>
       </label>
+      <span class="rank-controls-separator" aria-hidden="true"></span>
+      <button class="small-btn filter-toggle" id="filterToggle" type="button">
+        <span data-i18n="filters">Filters</span><span class="filter-count" id="filterCount"></span>
+      </button>
     </div>
-    <button class="small-btn filter-toggle" id="filterToggle" type="button">
-      <span data-i18n="filters">Filters</span><span class="filter-count" id="filterCount"></span>
-    </button>
     <div class="filter-popover" id="filterPopover" hidden>
       <div class="filter-row">
         <label class="filter-enable"><input id="filterPriceEnabled" type="checkbox"/><span data-i18n="maxPriceLabel">Max price</span></label>
@@ -164,6 +167,6 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="/static/app.js?v=0.8.9"></script>
+<script src="/static/app.js?v=0.8.10"></script>
 </body>
 </html>

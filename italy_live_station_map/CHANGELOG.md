@@ -13,6 +13,15 @@ formal semantic-version tags. Semver becomes the canonical version scheme from
 ### Planned
 - Evaluate route-aware fuel-stop planning without coupling it to the station-map core.
 
+## [0.8.10] - 2026-09-19
+
+### Changed
+- Made the collapsed top context card shrink to its content instead of reserving a fixed width.
+- Restored comfortable vertical padding and line spacing in the collapsed card.
+- Kept the expanded-panel subtitle on the same line as the title with explicit spacing.
+- Moved Filters onto the Sort/Show control row with a subtle separator.
+- Removed obsolete Leaflet-scale positioning CSS left over from pre-custom-scale versions.
+
 ## [0.8.9] - 2026-09-19
 
 ### Changed
