@@ -1,7 +1,7 @@
 const START={lat:43.9303,lon:10.9079};
 const PALETTE=['#0072B2','#56B4E9','#F0E442','#E69F00','#D55E00'];
-const PREF_KEY='fuelMapPrefsV2';
-const LEGACY_PREF_KEY='fuelMapPrefsV1';
+const PREF_KEY='fuelMapPrefsV3';
+const LEGACY_PREF_KEYS=['fuelMapPrefsV2','fuelMapPrefsV1'];
 
 const I18N={
  en:{
@@ -10,11 +10,11 @@ const I18N={
   radius:'Radius',fitRadius:'Fit radius',fill:'Fill',freshness:'Freshness',all:'all',
   refresh:'Refresh map',syncCurrent:'Sync current snapshot',myLocation:'Use my location',currentLocation:'Current location',
   ready:'Ready.',bestNearby:'Best prices nearby',rankSubtitle:'Price ranking ignores brands/ratings. Distance is straight-line from the selected point.',
-  sort:'Sort',price:'Price',distance:'Distance',savings:'Savings vs median',show:'Show',distribution:'Current price distribution',
+  sort:'Sort',price:'Price',distance:'Distance',savings:'Savings vs median',show:'Show',maxPrice:'max price',maxDistance:'max distance',maxPriceLabel:'Max price',maxDistanceLabel:'Max distance',distribution:'Current price distribution',
   relativePrice:'Relative price',helpTitle:'Map guide',shortcuts:'Keyboard shortcuts',panNorth:'Pan north',panWest:'Pan west',panSouth:'Pan south',panEast:'Pan east',zoom:'Zoom in / out',recenter:'Recenter',
   focusSearch:'Focus search',close:'Close popup/menu',
   guideIntroTitle:'Using the map',guideIntro:'Search for a place, click the map, or use your browser location to choose the centre point. The dashed circle is the active search radius.',
-  guideDataTitle:'Prices and ranking',guideData:'Choose fuel, service mode and freshness, then use “Show” to choose how many of the currently ranked stations are visible. Map markers, ranking rows and the histogram always use that same shown subset.',
+  guideDataTitle:'Prices and ranking',guideData:'Choose fuel, service mode and freshness, then use “Show” to define the visible subset. You can show all stations, the top 50/25/10 under the current sort, or use a maximum price/distance slider. Map markers, ranking rows and the histogram always use that same subset.',
   guideReadTitle:'Reading and selecting stations',guideRead:'Click a map marker or ranking row to select the same station in both views. The selected station is brought above nearby markers with a subtle halo. Use the ⛶ map button to centre and maximize the active search radius. Price labels appear automatically at closer zoom or when only a small number of stations is shown.',
   historyTitle:'History',historyHelp:'The 7/30/90-day views read only dates already stored in the local SQLite database. Sync adds the newest official snapshot only. The current nationwide snapshot is not retained day-by-day; history is kept only for stations in areas you view, so disk use stays small.',
   stations:'stations',hiddenStale:'hidden as stale',min:'min',median:'median',max:'max',snapshot:'snapshot',registry:'registry',
@@ -28,7 +28,7 @@ const I18N={
   spread:'spread {c}¢/L',histShown:'{shown} shown · {total} filtered',shownOf:'{shown}/{total} shown',
   historyFast:'History',daysAvailable:'{a}/{r} days available · {m} missing · no interpolation',
   localCoverage:'local station coverage: {n} snapshot days ({a} → {b})',noHistory:'No local history indexed for this period.',
-  station:'Station ID',communicated:'communicated',distanceKm:'{n} km',locationDenied:'Location not used',browserGeoUnavailable:'Browser geolocation unavailable.'
+  station:'Station ID',communicated:'communicated',distanceKm:'{n} km',locationDenied:'Location not used',browserGeoUnavailable:'Browser geolocation unavailable.',staleCount:'{n} stale hidden'
  },
  it:{
   title:'Prezzi carburanti MIMIT',subtitle:'dati ufficiali giornalieri, uniti in locale',searchPlaceholder:'Cerca una località in Italia…',
@@ -36,11 +36,11 @@ const I18N={
   radius:'Raggio',fitRadius:'Inquadra raggio',fill:'Rifornimento',freshness:'Freschezza',all:'tutti',
   refresh:'Aggiorna mappa',syncCurrent:'Sincronizza snapshot attuale',myLocation:'La mia posizione',currentLocation:'Posizione attuale',
   ready:'Pronto.',bestNearby:'Migliori prezzi nei dintorni',rankSubtitle:'La classifica ignora marchi/recensioni. La distanza è in linea d’aria dal punto selezionato.',
-  sort:'Ordina',price:'Prezzo',distance:'Distanza',savings:'Risparmio vs mediana',show:'Mostra',distribution:'Distribuzione prezzi attuale',
+  sort:'Ordina',price:'Prezzo',distance:'Distanza',savings:'Risparmio vs mediana',show:'Mostra',maxPrice:'prezzo max',maxDistance:'distanza max',maxPriceLabel:'Prezzo max',maxDistanceLabel:'Distanza max',distribution:'Distribuzione prezzi attuale',
   relativePrice:'Prezzo relativo',helpTitle:'Guida mappa',shortcuts:'Scorciatoie da tastiera',panNorth:'Sposta a nord',panWest:'Sposta a ovest',panSouth:'Sposta a sud',panEast:'Sposta a est',zoom:'Zoom avanti / indietro',recenter:'Ricentra',
   focusSearch:'Vai alla ricerca',close:'Chiudi popup/menu',
   guideIntroTitle:'Come usare la mappa',guideIntro:'Cerca una località, clicca sulla mappa oppure usa la posizione del browser per scegliere il punto centrale. Il cerchio tratteggiato è il raggio di ricerca attivo.',
-  guideDataTitle:'Prezzi e classifica',guideData:'Scegli carburante, modalità di servizio e freschezza, poi usa “Mostra” per scegliere quante stazioni dell’attuale classifica rendere visibili. Marker, righe della classifica e istogramma usano sempre lo stesso sottoinsieme mostrato.',
+  guideDataTitle:'Prezzi e classifica',guideData:'Scegli carburante, modalità di servizio e freschezza, poi usa “Mostra” per definire il sottoinsieme visibile. Puoi mostrare tutte le stazioni, le prime 50/25/10 secondo l’ordinamento corrente, oppure usare una soglia massima di prezzo o distanza. Marker, righe e istogramma usano sempre lo stesso sottoinsieme.',
   guideReadTitle:'Lettura e selezione delle stazioni',guideRead:'Clicca un marker o una riga della classifica per selezionare lo stesso impianto in entrambe le viste. La stazione selezionata viene portata sopra i marker vicini con un alone discreto. Usa il pulsante ⛶ sulla mappa per centrare e massimizzare il raggio attivo. Le etichette prezzo compaiono automaticamente a zoom ravvicinato o quando sono mostrate poche stazioni.',
   historyTitle:'Storico',historyHelp:'Le viste 7/30/90 giorni leggono solo le date già presenti nel database SQLite locale. La sincronizzazione aggiunge soltanto lo snapshot ufficiale più recente. Lo snapshot nazionale corrente non viene conservato giorno per giorno: lo storico viene mantenuto solo per gli impianti nelle aree che consulti, così lo spazio occupato resta ridotto.',
   stations:'stazioni',hiddenStale:'nascoste perché vecchie',min:'min',median:'mediana',max:'max',snapshot:'snapshot',registry:'anagrafica',
@@ -54,7 +54,7 @@ const I18N={
   spread:'ampiezza {c}¢/L',histShown:'{shown} mostrate · {total} filtrate',shownOf:'{shown}/{total} mostrate',
   historyFast:'Storico',daysAvailable:'{a}/{r} giorni disponibili · {m} mancanti · nessuna interpolazione',
   localCoverage:'copertura locale stazione: {n} giorni snapshot ({a} → {b})',noHistory:'Nessuno storico locale disponibile per questo periodo.',
-  station:'ID impianto',communicated:'comunicato',distanceKm:'{n} km',locationDenied:'Posizione non usata',browserGeoUnavailable:'Geolocalizzazione browser non disponibile.'
+  station:'ID impianto',communicated:'comunicato',distanceKm:'{n} km',locationDenied:'Posizione non usata',browserGeoUnavailable:'Geolocalizzazione browser non disponibile.',staleCount:'{n} vecchie nascoste'
  }
 };
 
@@ -64,14 +64,13 @@ const quantile=(a,p)=>{if(!a.length)return NaN;const x=(a.length-1)*p,l=Math.flo
 const fmt=x=>Number.isFinite(x)?`€${x.toFixed(3)}`:'n/a';
 
 function loadPrefs(){
- const defaults={fuel:'Benzina',mode:'1',radius:'5',fillLitres:'50',maxAgeDays:'3',rankSort:'price',rankLimit:'all',lat:START.lat,lon:START.lon,zoom:13,locationLabel:'Pistoia',controlsCollapsed:false,sidebarCollapsed:false};
+ const defaults={fuel:'Benzina',mode:'1',radius:'5',fillLitres:'50',maxAgeDays:'3',rankSort:'price',rankLimit:'all',showMaxPrice:null,showMaxDistance:null,lat:START.lat,lon:START.lon,zoom:13,locationLabel:'Pistoia',controlsCollapsed:false,sidebarCollapsed:false};
  try{
   const currentRaw=localStorage.getItem(PREF_KEY);
   if(currentRaw)return {...defaults,...JSON.parse(currentRaw)};
-  const legacyRaw=localStorage.getItem(LEGACY_PREF_KEY);
-  if(legacyRaw){
-   const legacy=JSON.parse(legacyRaw);
-   return {...defaults,...legacy,rankLimit:'all'};
+  for(const key of LEGACY_PREF_KEYS){
+   const raw=localStorage.getItem(key);
+   if(raw)return {...defaults,...JSON.parse(raw)};
   }
  }catch{}
  return defaults
@@ -80,7 +79,7 @@ const prefs=loadPrefs();
 let lang=localStorage.getItem('fuelMapLang')||(navigator.language&&navigator.language.toLowerCase().startsWith('it')?'it':'en');
 let current={lat:Number(prefs.lat)||START.lat,lon:Number(prefs.lon)||START.lon};
 let currentLocationLabel=prefs.locationLabel||'Pistoia';
-let center=null,radiusCircle=null,stations=[],shownStations=[],requestSeq=0,markerById=new Map(),lastServerState={},selectedStationId=null,selectionHalo=null,stationRequestKey=null,stationRequestPromise=null;
+let center=null,radiusCircle=null,stations=[],shownStations=[],requestSeq=0,markerById=new Map(),lastServerState={},selectedStationId=null,selectionHalo=null,stationRequestKey=null,stationRequestPromise=null,lastHiddenStale=0,showMaxPrice=Number.isFinite(Number(prefs.showMaxPrice))?Number(prefs.showMaxPrice):null,showMaxDistance=Number.isFinite(Number(prefs.showMaxDistance))?Number(prefs.showMaxDistance):null;
 
 function T(key,vars={}){
  let s=(I18N[lang]&&I18N[lang][key])||I18N.en[key]||key;
@@ -99,10 +98,12 @@ function conciseLocation(label){
 function updateCollapsedSummary(){
  if(!$('collapsedSummary'))return;
  const freshness=$('maxAgeDays').value==='all'?T('all'):`≤${$('maxAgeDays').value} d`;
- $('collapsedSummary').innerHTML=`<div class="summary-location">${esc(conciseLocation(currentLocationLabel))}</div><div class="summary-settings">${esc(optionText('fuel'))} · ${esc(optionText('mode'))} · ${$('radius').value} km · ${esc(freshness)} · ${$('fillLitres').value} L</div>`
+ const line1=`${conciseLocation(currentLocationLabel)} · ${optionText('fuel')} · ${optionText('mode')} · ${$('radius').value} km`;
+ const line2=`${freshness} · ${T('staleCount',{n:lastHiddenStale})} · ${$('fillLitres').value} L`;
+ $('collapsedSummary').innerHTML=`<div class="summary-location">${esc(line1)}</div><div class="summary-secondary">${esc(line2)}</div>`
 }
 function persistPrefs(){
- const data={fuel:$('fuel').value,mode:$('mode').value,radius:$('radius').value,fillLitres:$('fillLitres').value,maxAgeDays:$('maxAgeDays').value,rankSort:$('rankSort').value,rankLimit:$('rankLimit').value,lat:current.lat,lon:current.lon,zoom:map.getZoom(),locationLabel:currentLocationLabel,controlsCollapsed:$('controlBody').classList.contains('collapsed'),sidebarCollapsed:document.body.classList.contains('sidebar-collapsed')};
+ const data={fuel:$('fuel').value,mode:$('mode').value,radius:$('radius').value,fillLitres:$('fillLitres').value,maxAgeDays:$('maxAgeDays').value,rankSort:$('rankSort').value,rankLimit:$('rankLimit').value,showMaxPrice,showMaxDistance,lat:current.lat,lon:current.lon,zoom:map.getZoom(),locationLabel:currentLocationLabel,controlsCollapsed:$('controlBody').classList.contains('collapsed'),sidebarCollapsed:document.body.classList.contains('sidebar-collapsed')};
  localStorage.setItem(PREF_KEY,JSON.stringify(data));updateCollapsedSummary()
 }
 function setControlCollapsed(value,persist=true){
@@ -215,6 +216,33 @@ function popupHtml(s){
 }
 function openStation(id){selectStation(id,{pan:true,openPopup:true,scrollRank:true})}
 
+
+function updateShowThreshold(filtered){
+ const mode=$('rankLimit').value,wrap=$('showThreshold'),slider=$('showThresholdSlider'),label=$('showThresholdLabel'),value=$('showThresholdValue');
+ if(mode!=='maxPrice'&&mode!=='maxDistance'){wrap.hidden=true;return}
+ wrap.hidden=false;
+ if(mode==='maxPrice'){
+  const vals=filtered.map(s=>s.price).filter(Number.isFinite).sort((a,b)=>a-b);
+  if(!vals.length){wrap.hidden=true;return}
+  const min=Math.floor(vals[0]*1000)/1000,max=Math.ceil(vals.at(-1)*1000)/1000;
+  if(showMaxPrice==null)showMaxPrice=max;
+  showMaxPrice=Math.max(min,Math.min(max,showMaxPrice));
+  slider.min=min.toFixed(3);slider.max=max.toFixed(3);slider.step='0.001';slider.value=showMaxPrice.toFixed(3);
+  label.textContent=T('maxPriceLabel');value.textContent=fmt(showMaxPrice)
+ }else{
+  const max=Math.max(1,+$('radius').value);
+  if(showMaxDistance==null)showMaxDistance=max;
+  showMaxDistance=Math.max(.5,Math.min(max,showMaxDistance));
+  slider.min='0.5';slider.max=max.toFixed(1);slider.step='0.5';slider.value=showMaxDistance.toFixed(1);
+  label.textContent=T('maxDistanceLabel');value.textContent=`${showMaxDistance.toFixed(1)} km`
+ }
+}
+function readShowThreshold(){
+ const mode=$('rankLimit').value,slider=$('showThresholdSlider');
+ if(mode==='maxPrice')showMaxPrice=+slider.value;
+ else if(mode==='maxDistance')showMaxDistance=+slider.value
+}
+
 function sortedStations(filtered,referenceMedian){
  const mode=$('rankSort').value;
  return [...filtered].sort((a,b)=>{
@@ -225,7 +253,10 @@ function sortedStations(filtered,referenceMedian){
 }
 function shownStationSubset(filtered,referenceMedian){
  const ranked=sortedStations(filtered,referenceMedian),limit=$('rankLimit').value;
- return limit==='all'?ranked:ranked.slice(0,+limit)
+ if(limit==='all')return ranked;
+ if(limit==='maxPrice')return ranked.filter(s=>s.price<=showMaxPrice+1e-9);
+ if(limit==='maxDistance')return ranked.filter(s=>s.distance_km<=showMaxDistance+1e-9);
+ return ranked.slice(0,+limit)
 }
 function renderRanking(visible,filtered,referenceMedian){
  const fill=+$('fillLitres').value;
@@ -250,6 +281,7 @@ function render(){
  const filtered=activeStations();
  const filteredValues=filtered.map(s=>s.price).filter(Number.isFinite).sort((a,b)=>a-b);
  const referenceMedian=quantile(filteredValues,.5);
+ updateShowThreshold(filtered);
  const visible=shownStationSubset(filtered,referenceMedian);
  shownStations=visible;
  const values=visible.map(s=>s.price).filter(Number.isFinite).sort((a,b)=>a-b);
@@ -280,9 +312,19 @@ function render(){
  $('lmid').textContent=values.length?fmt(shownMedian):'—';
  $('lmax').textContent=values.length?fmt(values.at(-1)):'—';
 
- const hiddenStale=stations.length-filtered.length;
- const shownLabel=visible.length===filtered.length?`${visible.length} ${T('stations')}`:T('shownOf',{shown:visible.length,total:filtered.length});
- $('stats').innerHTML=values.length?`<span class="stat">${shownLabel}</span>${hiddenStale?`<span class="stat">${hiddenStale} ${T('hiddenStale')}</span>`:''}<span class="stat">${T('min')} ${fmt(values[0])}</span><span class="stat">${T('median')} ${fmt(shownMedian)}</span><span class="stat">${T('max')} ${fmt(values.at(-1))}</span>`:`<span class="stat">0 ${T('stations')}</span>`;
+ lastHiddenStale=stations.length-filtered.length;
+
+ const shownLabel=visible.length===filtered.length
+   ? `${visible.length} ${T('stations')}`
+   : T('shownOf',{shown:visible.length,total:filtered.length});
+
+ $('stats').innerHTML=values.length
+   ? `<span class="stat">${shownLabel}</span>
+      ${lastHiddenStale?`<span class="stat">${lastHiddenStale} ${T('hiddenStale')}</span>`:''}
+      <span class="stat">${T('min')} ${fmt(values[0])}</span>
+      <span class="stat">${T('median')} ${fmt(shownMedian)}</span>
+      <span class="stat">${T('max')} ${fmt(values.at(-1))}</span>`
+   : `<span class="stat">0 ${T('stations')}</span>`;
 
  renderRanking(visible,filtered,referenceMedian);
  applySelectionStyles(false);
@@ -331,7 +373,7 @@ function bindEvents(){
  $('radius').addEventListener('input',e=>{$('radiusValue').textContent=`${e.target.value} km`;updateRadiusCircle();persistPrefs()});$('radius').addEventListener('change',loadStations);
  $('fillLitres').addEventListener('input',e=>{$('fillLitresValue').textContent=`${e.target.value} L`;persistPrefs();render()});
  $('fuel').addEventListener('change',()=>{persistPrefs();loadStations()});$('mode').addEventListener('change',()=>{persistPrefs();loadStations()});$('maxAgeDays').addEventListener('change',()=>{persistPrefs();render()});
- $('refresh').addEventListener('click',loadStations);$('sync').addEventListener('click',syncNow);$('locate').addEventListener('click',useLocation);$('rankSort').addEventListener('change',()=>{persistPrefs();render()});$('rankLimit').addEventListener('change',()=>{persistPrefs();render()});
+ $('refresh').addEventListener('click',loadStations);$('sync').addEventListener('click',syncNow);$('locate').addEventListener('click',useLocation);$('rankSort').addEventListener('change',()=>{persistPrefs();render()});$('rankLimit').addEventListener('change',()=>{updateShowThreshold(activeStations());persistPrefs();render()});$('showThresholdSlider').addEventListener('input',()=>{readShowThreshold();persistPrefs();render()});
  $('searchForm').addEventListener('submit',e=>{e.preventDefault();const q=$('locationSearch').value.trim();if(q)searchLocation(q)});
  $('langToggle').addEventListener('click',()=>{lang=lang==='en'?'it':'en';applyLanguage()});
  $('helpBtn').addEventListener('click',()=>$('helpModal').classList.add('show'));$('closeHelp').addEventListener('click',()=>$('helpModal').classList.remove('show'));$('helpModal').addEventListener('click',e=>{if(e.target===$('helpModal'))$('helpModal').classList.remove('show')});

@@ -13,6 +13,23 @@ formal semantic-version tags. Semver becomes the canonical version scheme from
 ### Planned
 - Evaluate route-aware fuel-stop planning without coupling it to the station-map core.
 
+## [0.8.8] - 2026-09-19
+
+### Changed
+- Restored the station summary chips in the expanded top panel.
+- The collapsed context card remains compact and keeps only its two-line summary.
+
+## [0.8.7] - 2026-09-19
+
+### Changed
+- Reduced the compact top context card and rewrote its summary as two dense lines.
+- Removed duplicate top-panel station-count and price-range chips; those values already live in the ranking panel and map legend.
+- Compact summary now places freshness and stale-price count on its second line.
+- Moved the Leaflet distance scale directly above the price legend, left-aligned.
+- Extended `Show` with two threshold modes: maximum price and maximum straight-line distance.
+- Threshold modes expose one dynamic slider and keep map markers, ranking rows and histogram on the same shown subset.
+- Threshold values are persisted with the other browser UI preferences.
+
 ## [0.8.6] - 2026-09-19
 
 ### Fixed

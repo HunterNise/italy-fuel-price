@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>MIMIT fuel prices</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="/static/styles.css?v=0.8.6"/>
+<link rel="stylesheet" href="/static/styles.css?v=0.8.8"/>
 </head>
 <body>
 <div id="map"></div>
@@ -77,7 +77,23 @@
     <div class="rank-sub" data-i18n="rankSubtitle">Price ranking ignores brands/ratings. Distance is straight-line from the selected point.</div>
     <div class="rank-controls">
       <label><span data-i18n="sort">Sort</span><select id="rankSort"><option value="price" data-i18n="price">Price</option><option value="distance" data-i18n="distance">Distance</option><option value="saving" data-i18n="savings">Savings vs median</option></select></label>
-      <label><span data-i18n="show">Show</span><select id="rankLimit"><option value="all" selected data-i18n="all">all</option><option value="50">50</option><option value="25">25</option><option value="10">10</option></select></label>
+      <label><span data-i18n="show">Show</span>
+        <select id="rankLimit">
+          <option value="all" selected data-i18n="all">all</option>
+          <option value="50">50</option>
+          <option value="25">25</option>
+          <option value="10">10</option>
+          <option value="maxPrice" data-i18n="maxPrice">max price</option>
+          <option value="maxDistance" data-i18n="maxDistance">max distance</option>
+        </select>
+      </label>
+    </div>
+    <div class="show-threshold" id="showThreshold" hidden>
+      <label>
+        <span id="showThresholdLabel">Maximum</span>
+        <input id="showThresholdSlider" type="range"/>
+        <span id="showThresholdValue"></span>
+      </label>
     </div>
     <div class="dist-box">
       <div class="dist-head"><span class="dist-title" data-i18n="distribution">Current price distribution</span><span class="dist-spread" id="distSpread"></span></div>
@@ -113,7 +129,7 @@
     <p data-i18n="guideIntro">Search for a place, click the map, or use your browser location to choose the centre point. The dashed circle is the active search radius.</p>
 
     <h3 data-i18n="guideDataTitle">Prices and ranking</h3>
-    <p data-i18n="guideData">Choose fuel, service mode and freshness, then use “Show” to choose how many of the currently ranked stations are visible. The map markers, ranking rows and histogram always use that same shown subset.</p>
+    <p data-i18n="guideData">Choose fuel, service mode and freshness, then use “Show” to define the visible subset. You can show all stations, the top 50/25/10 under the current sort, or set a maximum price or distance with the slider. Map markers, ranking rows and the histogram always use exactly that same subset.</p>
 
     <h3 data-i18n="guideReadTitle">Reading and selecting stations</h3>
     <p data-i18n="guideRead">Click a map marker or ranking row to select the same station in both views. The selected station is brought above nearby markers with a subtle halo. Use the ⛶ map button to centre and maximize the active search radius in the current map viewport. Price labels appear automatically when the map is sufficiently close, or when only a small number of stations is shown.</p>
@@ -139,6 +155,6 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="/static/app.js?v=0.8.6"></script>
+<script src="/static/app.js?v=0.8.8"></script>
 </body>
 </html>
