@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Italy live fuel station prices</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  html, body, #map { height: 100%; margin: 0; }
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  #map { background: #e9ecef; }
+
+  .panel {
+    position: absolute; z-index: 1000; top: 12px; left: 12px;
+    width: min(560px, calc(100vw - 24px));
+    background: rgba(255,255,255,.96);
+    border: 1px solid rgba(0,0,0,.12);
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.18);
+    padding: 10px 12px;
+  }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .row + .row { margin-top:8px; }
+  label { font-size: 12px; color:#333; }
+  select, input[type="number"], button {
+    font: inherit; font-size: 13px; padding: 5px 7px;
+  }
+  select, input[type="number"] {
+    border:1px solid #bbb; border-radius:6px; background:#fff;
+  }
+  button {
+    border:1px solid #aaa; border-radius:6px; background:#fff; cursor:pointer;
+  }
+  button:hover { background:#f2f2f2; }
+  button.primary { font-weight:650; }
+  #radius { width:110px; }
+  #status { font-size:12px; color:#555; line-height:1.3; }
+  #stats {
+    display:flex; gap:8px; flex-wrap:wrap;
+    font-size:12px; color:#222;
+  }
+  .stat {
+    background:#f3f4f6; border-radius:999px; padding:3px 8px;
+    border:1px solid #e5e7eb;
+  }
+  .legend {
+    position:absolute; z-index:1000; right:12px; bottom:22px;
+    background:rgba(255,255,255,.95); padding:8px 10px; border-radius:8px;
+    box-shadow:0 1px 8px rgba(0,0,0,.15); font-size:12px;
+    min-width:175px;
+  }
+  .gradient {
+    height:10px; border-radius:5px;
+    background:linear-gradient(90deg,hsl(120,65%,42%),hsl(60,75%,48%),hsl(0,72%,52%));
+    margin:5px 0 3px 0;
+  }
+  .legend-row { display:flex; justify-content:space-between; gap:8px; }
+  .price-label {
+    color:#111; font-weight:750; font-size:11px; line-height:1;
+    background:rgba(255,255,255,.88); border:1px solid rgba(0,0,0,.2);
+    border-radius:4px; padding:2px 3px; white-space:nowrap;
+    box-shadow:0 1px 2px rgba(0,0,0,.12);
+  }
+  .leaflet-tooltip.price-tip {
+    background:transparent; border:0; box-shadow:none; padding:0;
+  }
+  .leaflet-tooltip.price-tip:before { display:none; }
+  .popup-price { font-size:20px; font-weight:750; }
+  .popup-meta { margin-top:5px; color:#555; font-size:12px; }
+  .center-dot {
+    width:10px; height:10px; border-radius:50%;
+    background:#111; border:2px solid #fff; box-shadow:0 0 0 1px #111;
+  }
+  .hint { font-size:11px; color:#666; }
+  @media(max-width:620px) {
+    .panel { font-size:12px; }
+    .legend { bottom:16px; }
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<div class="panel">
+  <div class="row">
+    <strong>Live station prices</strong>
+    <span class="hint">MIMIT data · click map to search there</span>
+  </div>
+  <div class="row">
+    <label>Fuel
+      <select id="fuel">
+        <option value="Benzina">Petrol</option>
+        <option value="Gasolio" selected>Diesel</option>
+        <option value="GPL">GPL</option>
+        <option value="Metano">Methane</option>
+      </select>
+    </label>
+    <label>Mode
+      <select id="mode">
+        <option value="1" selected>Self-service</option>
+        <option value="0">Served</option>
+      </select>
+    </label>
+    <label>Radius
+      <input id="radius" type="range" min="1" max="10" step="1" value="5"/>
+      <span id="radiusValue">5 km</span>
+    </label>
+    <button id="refresh" class="primary">Refresh</button>
+    <button id="locate">Use my location</button>
+  </div>
+  <div class="row">
+    <div id="stats"></div>
+  </div>
+  <div id="status">Ready.</div>
+</div>
+
+<div class="legend">
+  <div><strong>Relative price</strong></div>
+  <div class="gradient"></div>
+  <div class="legend-row"><span id="lmin">low</span><span id="lmed">median</span><span id="lmax">high</span></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const START = {lat: 43.9303, lon: 10.9079}; // Pistoia city centre, only a default
+const map = L.map('map', { zoomControl: true }).setView([START.lat, START.lon], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+L.control.scale({imperial:false}).addTo(map);
+
+const markerLayer = L.layerGroup().addTo(map);
+let centerMarker = null;
+let current = { ...START };
+let stations = [];
+let requestSeq = 0;
+
+function setCenterMarker(lat, lon) {
+  if (centerMarker) centerMarker.remove();
+  centerMarker = L.marker([lat,lon], {
+    icon: L.divIcon({className:'', html:'<div class="center-dot"></div>', iconSize:[14,14], iconAnchor:[7,7]}),
+    interactive:false
+  }).addTo(map);
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+  })[c]);
+}
+
+function quantile(sorted, q) {
+  if (!sorted.length) return NaN;
+  const pos=(sorted.length-1)*q, lo=Math.floor(pos), hi=Math.ceil(pos);
+  if (lo===hi) return sorted[lo];
+  return sorted[lo]*(hi-pos)+sorted[hi]*(pos-lo);
+}
+
+function priceColor(price, lo, hi) {
+  if (!isFinite(price) || !isFinite(lo) || !isFinite(hi) || hi <= lo) return 'hsl(55,70%,48%)';
+  let t=(price-lo)/(hi-lo);
+  t=Math.max(0,Math.min(1,t));
+  const hue=120*(1-t);
+  return `hsl(${hue},70%,45%)`;
+}
+
+function formatPrice(p) {
+  return isFinite(p) ? `€${p.toFixed(3)}` : 'n/a';
+}
+
+function updateLegend(vals) {
+  if (!vals.length) {
+    lmin.textContent='low'; lmed.textContent='median'; lmax.textContent='high';
+    return;
+  }
+  const s=[...vals].sort((a,b)=>a-b);
+  lmin.textContent=formatPrice(s[0]);
+  lmed.textContent=formatPrice(quantile(s,.5));
+  lmax.textContent=formatPrice(s[s.length-1]);
+}
+
+function render() {
+  markerLayer.clearLayers();
+  const vals=stations.map(s=>s.price).filter(Number.isFinite);
+  const sorted=[...vals].sort((a,b)=>a-b);
+  const lo=quantile(sorted,.05), hi=quantile(sorted,.95), med=quantile(sorted,.5);
+
+  for (const s of stations) {
+    if (!Number.isFinite(s.lat) || !Number.isFinite(s.lon) || !Number.isFinite(s.price)) continue;
+    const color=priceColor(s.price, lo, hi);
+    const circle=L.circleMarker([s.lat,s.lon], {
+      radius:9, color:'#222', weight:.7, fillColor:color, fillOpacity:.92, pane:'markerPane'
+    }).addTo(markerLayer);
+
+    circle.bindTooltip(`<span class="price-label">${formatPrice(s.price)}</span>`, {
+      permanent:true, direction:'top', offset:[0,-7], className:'price-tip', opacity:1
+    });
+
+    const html = `
+      <div class="popup-price">${formatPrice(s.price)}</div>
+      <div><strong>${esc(s.fuel)}</strong> · ${s.isSelf ? 'self-service' : 'served'}</div>
+      <div class="popup-meta">
+        Station ID ${esc(s.id)}<br/>
+        ${esc(s.address || '')}
+        ${s.updated ? `<br/>record timestamp: ${esc(s.updated)}` : ''}
+      </div>`;
+    circle.bindPopup(html, {maxWidth:300});
+  }
+
+  updateLegend(vals);
+  stats.innerHTML = vals.length ? `
+    <span class="stat">${vals.length} stations</span>
+    <span class="stat">min ${formatPrice(Math.min(...vals))}</span>
+    <span class="stat">median ${formatPrice(med)}</span>
+    <span class="stat">max ${formatPrice(Math.max(...vals))}</span>
+  ` : '<span class="stat">0 stations</span>';
+
+  toggleLabels();
+}
+
+function toggleLabels() {
+  const show=map.getZoom() >= 12;
+  markerLayer.eachLayer(layer => {
+    if (!layer.getTooltip) return;
+    const tt=layer.getTooltip();
+    if (!tt) return;
+    if (show && !layer.isTooltipOpen()) layer.openTooltip();
+    if (!show && layer.isTooltipOpen()) layer.closeTooltip();
+  });
+}
+
+async function loadStations() {
+  const seq=++requestSeq;
+  const fuel=document.getElementById('fuel').value;
+  const mode=document.getElementById('mode').value;
+  const radius=document.getElementById('radius').value;
+  status.textContent='Fetching current MIMIT station prices…';
+
+  const url=`/api/stations?lat=${encodeURIComponent(current.lat)}&lon=${encodeURIComponent(current.lon)}&radius=${encodeURIComponent(radius)}&fuel=${encodeURIComponent(fuel)}&self=${encodeURIComponent(mode)}`;
+
+  try {
+    const r=await fetch(url, {cache:'no-store'});
+    const data=await r.json();
+    if (seq !== requestSeq) return;
+    if (!r.ok || !data.ok) throw new Error(data.error || `HTTP ${r.status}`);
+    stations=data.stations || [];
+    render();
+    status.textContent=`Updated ${new Date().toLocaleTimeString()} · backend: ${data.backend || 'MIMIT'} · center ${current.lat.toFixed(4)}, ${current.lon.toFixed(4)}`;
+  } catch (e) {
+    if (seq !== requestSeq) return;
+    stations=[]; render();
+    status.innerHTML=`Could not fetch live prices: ${esc(e.message)}. The local server must be running and able to reach the MIMIT API.`;
+  }
+}
+
+function relocate(lat, lon, zoom=13, reload=true) {
+  current={lat,lon};
+  setCenterMarker(lat,lon);
+  map.setView([lat,lon],zoom);
+  if (reload) loadStations();
+}
+
+document.getElementById('radius').addEventListener('input', e => {
+  radiusValue.textContent=`${e.target.value} km`;
+});
+document.getElementById('radius').addEventListener('change', loadStations);
+document.getElementById('fuel').addEventListener('change', loadStations);
+document.getElementById('mode').addEventListener('change', loadStations);
+document.getElementById('refresh').addEventListener('click', loadStations);
+
+document.getElementById('locate').addEventListener('click', () => {
+  if (!navigator.geolocation) {
+    status.textContent='Browser geolocation is unavailable.';
+    return;
+  }
+  status.textContent='Requesting browser location…';
+  navigator.geolocation.getCurrentPosition(
+    pos => relocate(pos.coords.latitude, pos.coords.longitude, 13, true),
+    err => status.textContent=`Location not used: ${err.message}`,
+    {enableHighAccuracy:false, timeout:10000}
+  );
+});
+
+map.on('click', e => relocate(e.latlng.lat, e.latlng.lng, map.getZoom(), true));
+map.on('zoomend', toggleLabels);
+
+setCenterMarker(START.lat, START.lon);
+loadStations();
+</script>
+</body>
+</html>
