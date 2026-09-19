@@ -13,6 +13,18 @@ formal semantic-version tags. Semver becomes the canonical version scheme from
 ### Planned
 - Evaluate route-aware fuel-stop planning without coupling it to the station-map core.
 
+## [0.8.9] - 2026-09-19
+
+### Changed
+- Replaced the Leaflet scale with a custom bottom-left scale directly above the price legend.
+- Reworked the collapsed context card into three explicit lines: location; fuel/mode/radius/fill; freshness/stale/shown.
+- Reduced collapsed-card width and vertical spacing.
+- Restored `Show` to display-limit semantics only (`all`, `50`, `25`, `10`).
+- Added a separate Filters popover with combinable maximum-price and maximum-distance sliders.
+- Added compact active-filter chips and an active-filter count.
+- Filtering order is now: radius/fuel/mode/freshness -> optional filters -> sort -> Show -> map/ranking/histogram.
+- Migrates 0.8.8 threshold-mode preferences into the new filter model.
+
 ## [0.8.8] - 2026-09-19
 
 ### Changed

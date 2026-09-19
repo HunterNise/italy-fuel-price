@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>MIMIT fuel prices</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="/static/styles.css?v=0.8.8"/>
+<link rel="stylesheet" href="/static/styles.css?v=0.8.9"/>
 </head>
 <body>
 <div id="map"></div>
@@ -83,18 +83,24 @@
           <option value="50">50</option>
           <option value="25">25</option>
           <option value="10">10</option>
-          <option value="maxPrice" data-i18n="maxPrice">max price</option>
-          <option value="maxDistance" data-i18n="maxDistance">max distance</option>
         </select>
       </label>
     </div>
-    <div class="show-threshold" id="showThreshold" hidden>
-      <label>
-        <span id="showThresholdLabel">Maximum</span>
-        <input id="showThresholdSlider" type="range"/>
-        <span id="showThresholdValue"></span>
-      </label>
+    <button class="small-btn filter-toggle" id="filterToggle" type="button">
+      <span data-i18n="filters">Filters</span><span class="filter-count" id="filterCount"></span>
+    </button>
+    <div class="filter-popover" id="filterPopover" hidden>
+      <div class="filter-row">
+        <label class="filter-enable"><input id="filterPriceEnabled" type="checkbox"/><span data-i18n="maxPriceLabel">Max price</span></label>
+        <input id="filterPriceSlider" type="range"/><span id="filterPriceValue" class="filter-value"></span>
+      </div>
+      <div class="filter-row">
+        <label class="filter-enable"><input id="filterDistanceEnabled" type="checkbox"/><span data-i18n="maxDistanceLabel">Max distance</span></label>
+        <input id="filterDistanceSlider" type="range"/><span id="filterDistanceValue" class="filter-value"></span>
+      </div>
+      <div class="filter-actions"><button class="small-btn" id="filterReset" type="button" data-i18n="resetFilters">Reset filters</button></div>
     </div>
+    <div class="active-filter-chips" id="activeFilterChips"></div>
     <div class="dist-box">
       <div class="dist-head"><span class="dist-title" data-i18n="distribution">Current price distribution</span><span class="dist-spread" id="distSpread"></span></div>
       <div class="dist-note" id="distNote"></div>
@@ -106,10 +112,13 @@
 </div>
 <button id="showSidebar" class="sidebar-reopen" title="Show ranking">‹</button>
 
-<div class="legend">
-  <strong data-i18n="relativePrice">Relative price</strong>
-  <div class="legend-swatches"><span></span><span></span><span></span><span></span><span></span></div>
-  <div class="legend-row"><span id="lmin">low</span><span id="lmid">median</span><span id="lmax">high</span></div>
+<div class="map-footer-cluster">
+  <div class="custom-scale" id="customScale"><div class="custom-scale-label" id="customScaleLabel"></div><div class="custom-scale-bar" id="customScaleBar"></div></div>
+  <div class="legend">
+    <strong data-i18n="relativePrice">Relative price</strong>
+    <div class="legend-swatches"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="legend-row"><span id="lmin">low</span><span id="lmid">median</span><span id="lmax">high</span></div>
+  </div>
 </div>
 
 <div class="navpad">
@@ -129,7 +138,7 @@
     <p data-i18n="guideIntro">Search for a place, click the map, or use your browser location to choose the centre point. The dashed circle is the active search radius.</p>
 
     <h3 data-i18n="guideDataTitle">Prices and ranking</h3>
-    <p data-i18n="guideData">Choose fuel, service mode and freshness, then use “Show” to define the visible subset. You can show all stations, the top 50/25/10 under the current sort, or set a maximum price or distance with the slider. Map markers, ranking rows and the histogram always use exactly that same subset.</p>
+    <p data-i18n="guideData">Choose fuel, service mode and freshness. Use Filters for maximum price/distance constraints, then sort the remaining stations and optionally limit the displayed result with Show. Map markers, ranking rows and the histogram always use the same final station subset.</p>
 
     <h3 data-i18n="guideReadTitle">Reading and selecting stations</h3>
     <p data-i18n="guideRead">Click a map marker or ranking row to select the same station in both views. The selected station is brought above nearby markers with a subtle halo. Use the ⛶ map button to centre and maximize the active search radius in the current map viewport. Price labels appear automatically when the map is sufficiently close, or when only a small number of stations is shown.</p>
@@ -155,6 +164,6 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="/static/app.js?v=0.8.8"></script>
+<script src="/static/app.js?v=0.8.9"></script>
 </body>
 </html>

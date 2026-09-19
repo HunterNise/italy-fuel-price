@@ -1,6 +1,6 @@
 # Italy live station-price map
 
-**Version 0.8.8**
+**Version 0.8.9**
 
 A local interactive map for Italian fuel-station prices using official MIMIT
 station and price data.
@@ -156,3 +156,12 @@ legend.
 The summary chips (shown station count, stale-hidden count, minimum, median and
 maximum price) are visible in the expanded top panel only. The collapsed context
 card remains compact and shows only its two-line context summary.
+
+
+## 0.8.9 filtering and compact-view notes
+
+The compact context card now uses three lines: location; fuel/mode/radius/fill; freshness/stale/shown.
+
+The map footer uses a custom distance scale directly above the price legend. `Show` controls only the display limit (`all`, `50`, `25`, `10`). Maximum price and maximum distance are separate, combinable constraints in the **Filters** popover.
+
+The processing order is `radius/fuel/mode/freshness -> optional filters -> sort -> Show -> map + ranking + histogram`.
