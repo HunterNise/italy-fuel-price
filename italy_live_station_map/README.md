@@ -66,3 +66,16 @@ or:
 ```bash
 python3 italy_live_station_map/serve_map.py
 ```
+
+
+## UI patch after v8
+
+This patch changes only the front-end documentation/UI files:
+
+* petrol is the default fuel;
+* the relative-price legend is raised slightly to reduce marker overlap;
+* shortcut key boxes are more compact and consistent;
+* the help dialog is now a short usage guide with sections for map use,
+  ranking, station details, history, and keyboard shortcuts.
+
+No cache, SQLite database, historical data, or synchronization code is changed.

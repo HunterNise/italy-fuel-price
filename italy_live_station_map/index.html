@@ -43,7 +43,7 @@ select{font-size:12px;padding:5px 6px;border:1px solid #bbb;border-radius:7px;ba
 #distChart{margin-top:3px}.dist-axis{font-size:9px;fill:#666}
 
 /* legend */
-.legend{position:absolute;z-index:800;left:12px;bottom:12px;background:var(--panel-bg);padding:7px 9px;border-radius:8px;box-shadow:0 1px 8px #0002;font-size:11px;min-width:210px}
+.legend{position:absolute;z-index:800;left:12px;bottom:46px;background:var(--panel-bg);padding:7px 9px;border-radius:8px;box-shadow:0 1px 8px #0002;font-size:11px;min-width:210px}
 .legend-swatches{display:grid;grid-template-columns:repeat(5,1fr);height:11px;border-radius:5px;overflow:hidden;margin:5px 0 3px}
 .legend-swatches span:nth-child(1){background:#0072B2}.legend-swatches span:nth-child(2){background:#56B4E9}.legend-swatches span:nth-child(3){background:#F0E442}.legend-swatches span:nth-child(4){background:#E69F00}.legend-swatches span:nth-child(5){background:#D55E00}
 .legend-row{display:flex;justify-content:space-between;color:#555}
@@ -59,9 +59,9 @@ select{font-size:12px;padding:5px 6px;border:1px solid #bbb;border-radius:7px;ba
 
 /* help */
 .modal-backdrop{display:none;position:fixed;z-index:2000;inset:0;background:rgba(0,0,0,.35);align-items:center;justify-content:center;padding:18px}.modal-backdrop.show{display:flex}
-.modal{width:min(700px,100%);background:#fff;border-radius:12px;box-shadow:0 10px 40px #0005;padding:15px 17px}.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.modal h2{font-size:19px;margin:0}.modal h3{font-size:14px;margin:15px 0 6px}.modal p,.modal li{font-size:12px;line-height:1.45}
-.shortcuts{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}.shortcut{display:grid;grid-template-columns:74px 1fr;align-items:center;gap:7px;font-size:12px}
-kbd{border:1px solid #aaa;border-bottom-width:2px;border-radius:4px;padding:1px 5px;background:#f7f7f7;font-family:inherit}
+.modal{width:min(820px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:12px;box-shadow:0 10px 40px #0005;padding:15px 17px}.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.modal h2{font-size:19px;margin:0}.modal h3{font-size:14px;margin:15px 0 6px}.modal p,.modal li{font-size:12px;line-height:1.45}
+.shortcuts{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}.shortcut{display:grid;grid-template-columns:62px 1fr;align-items:center;gap:8px;font-size:12px}
+kbd{display:inline-flex;align-items:center;justify-content:center;min-width:58px;width:max-content;max-width:62px;border:1px solid #aaa;border-bottom-width:2px;border-radius:5px;padding:2px 6px;background:#f7f7f7;font-family:inherit;white-space:nowrap}
 
 /* collapsing */
 body.sidebar-collapsed{--sidebar:0px}.sidebar-reopen{display:none;position:absolute;z-index:1001;right:8px;top:12px;border:1px solid #aaa;border-radius:8px;background:#fff;padding:6px 8px;box-shadow:var(--shadow)}
@@ -69,8 +69,8 @@ body.sidebar-collapsed .ranking{transform:translateX(100%)}body.sidebar-collapse
 
 @media(max-width:820px){
   :root{--sidebar:0px}#map{right:0;bottom:43vh}.ranking{left:0;right:0;top:auto;bottom:0;width:auto;height:43vh;border-left:0;border-top:1px solid var(--border)}
-  .panel{width:calc(100vw - 24px);max-width:none}.legend{bottom:calc(43vh + 12px)}.navpad{right:12px;bottom:calc(43vh + 30px)}
-  body.sidebar-collapsed #map{bottom:0}body.sidebar-collapsed .ranking{transform:translateY(100%)}body.sidebar-collapsed .legend{bottom:12px}body.sidebar-collapsed .navpad{bottom:30px}
+  .panel{width:calc(100vw - 24px);max-width:none}.legend{bottom:calc(43vh + 46px)}.navpad{right:12px;bottom:calc(43vh + 30px)}
+  body.sidebar-collapsed #map{bottom:0}body.sidebar-collapsed .ranking{transform:translateY(100%)}body.sidebar-collapsed .legend{bottom:46px}body.sidebar-collapsed .navpad{bottom:30px}
   .shortcuts{grid-template-columns:1fr}
 }
 </style>
@@ -95,7 +95,7 @@ body.sidebar-collapsed .ranking{transform:translateX(100%)}body.sidebar-collapse
     </form>
     <div class="row">
       <label><span data-i18n="fuel">Fuel</span>
-        <select id="fuel"><option value="Benzina" data-i18n="petrol">Petrol</option><option value="Gasolio" selected data-i18n="diesel">Diesel</option><option value="GPL">GPL</option><option value="Metano" data-i18n="methane">Methane</option></select>
+        <select id="fuel"><option value="Benzina" selected data-i18n="petrol">Petrol</option><option value="Gasolio" data-i18n="diesel">Diesel</option><option value="GPL">GPL</option><option value="Metano" data-i18n="methane">Methane</option></select>
       </label>
       <label><span data-i18n="mode">Mode</span>
         <select id="mode"><option value="1" selected data-i18n="self">Self-service</option><option value="0" data-i18n="served">Served</option></select>
@@ -152,8 +152,31 @@ body.sidebar-collapsed .ranking{transform:translateX(100%)}body.sidebar-collapse
 
 <div id="helpModal" class="modal-backdrop">
   <div class="modal">
-    <div class="modal-head"><h2 data-i18n="helpTitle">Map controls</h2><button class="icon-btn" id="closeHelp">×</button></div>
-    <p data-i18n="helpIntro">Click the map to move the selected search point. The dashed circle is the active radius.</p>
+    <div class="modal-head">
+      <h2 data-i18n="helpTitle">Map guide</h2>
+      <button class="icon-btn" id="closeHelp">×</button>
+    </div>
+
+    <h3 data-i18n="guideIntroTitle">Using the map</h3>
+    <p data-i18n="guideIntro">
+      Search for a place, click the map, or use your browser location to choose the centre point. The dashed circle is the active search radius.
+    </p>
+
+    <h3 data-i18n="guideDataTitle">Prices and ranking</h3>
+    <p data-i18n="guideData">
+      Choose fuel, service mode and freshness. The map and ranking use the same filtered station set. “Show” changes only how many ranking rows are displayed; the histogram always describes all filtered stations.
+    </p>
+
+    <h3 data-i18n="guideReadTitle">Reading a station</h3>
+    <p data-i18n="guideRead">
+      Each station shows the current reported price, straight-line distance, price age and savings versus the local median for your selected fill size. Click a ranked row or map marker to open its details.
+    </p>
+
+    <h3 data-i18n="historyTitle">History</h3>
+    <p data-i18n="historyHelp">
+      The 7/30/90-day views read only dates already stored in the local SQLite database. Sync adds the newest official snapshot only. The current nationwide snapshot is not retained day-by-day; history is kept only for stations in areas you view, so disk use stays small.
+    </p>
+
     <h3 data-i18n="shortcuts">Keyboard shortcuts</h3>
     <div class="shortcuts">
       <div class="shortcut"><kbd>W / ↑</kbd><span data-i18n="panNorth">Pan north</span></div>
@@ -165,13 +188,9 @@ body.sidebar-collapsed .ranking{transform:translateX(100%)}body.sidebar-collapse
       <div class="shortcut"><kbd>R</kbd><span data-i18n="refresh">Refresh map</span></div>
       <div class="shortcut"><kbd>L</kbd><span data-i18n="myLocation">Use my location</span></div>
       <div class="shortcut"><kbd>/</kbd><span data-i18n="focusSearch">Focus search</span></div>
-      <div class="shortcut"><kbd>H / ?</kbd><span data-i18n="helpTitle">Map controls</span></div>
+      <div class="shortcut"><kbd>H / ?</kbd><span data-i18n="helpTitle">Map guide</span></div>
       <div class="shortcut"><kbd>Esc</kbd><span data-i18n="close">Close popup/menu</span></div>
     </div>
-    <h3 data-i18n="historyTitle">History</h3>
-    <p data-i18n="historyHelp">
-      The 7/30/90-day views read only dates already stored in the local SQLite database. Sync adds the newest official snapshot only. The current nationwide snapshot is not retained day-by-day; history is kept only for stations in areas you view, so disk use stays small.
-    </p>
   </div>
 </div>
 
@@ -187,9 +206,16 @@ const I18N={
   radius:'Radius',fill:'Fill',freshness:'Freshness',all:'all',refresh:'Refresh map',syncCurrent:'Sync current snapshot',myLocation:'Use my location',
   ready:'Ready.',bestNearby:'Best prices nearby',rankSubtitle:'Price ranking ignores brands/ratings. Distance is straight-line from the selected point.',
   sort:'Sort',price:'Price',distance:'Distance',savings:'Savings vs median',show:'Show',distribution:'Current price distribution',
-  relativePrice:'Relative price',helpTitle:'Map controls',helpIntro:'Click the map to move the selected search point. The dashed circle is the active radius.',
+  relativePrice:'Relative price',helpTitle:'Map guide',helpIntro:'Click the map to move the selected search point. The dashed circle is the active radius.',
   shortcuts:'Keyboard shortcuts',panNorth:'Pan north',panWest:'Pan west',panSouth:'Pan south',panEast:'Pan east',zoom:'Zoom in / out',recenter:'Recenter',
-  focusSearch:'Focus search',close:'Close popup/menu',historyTitle:'History',
+  focusSearch:'Focus search',close:'Close popup/menu',
+  guideIntroTitle:'Using the map',
+  guideIntro:'Search for a place, click the map, or use your browser location to choose the centre point. The dashed circle is the active search radius.',
+  guideDataTitle:'Prices and ranking',
+  guideData:'Choose fuel, service mode and freshness. The map and ranking use the same filtered station set. “Show” changes only how many ranking rows are displayed; the histogram always describes all filtered stations.',
+  guideReadTitle:'Reading a station',
+  guideRead:'Each station shows the current reported price, straight-line distance, price age and savings versus the local median for your selected fill size. Click a ranked row or map marker to open its details.',
+  historyTitle:'History',
   historyHelp:'The 7/30/90-day views read only dates already stored in the local SQLite database. Sync adds the newest official snapshot only. The current nationwide snapshot is not retained day-by-day; history is kept only for stations in areas you view, so disk use stays small.',
   stations:'stations',hiddenStale:'hidden as stale',min:'min',median:'median',max:'max',snapshot:'snapshot',registry:'registry',
   localHistory:'local history',snapshotDays:'snapshot days',tracked:'tracked stations',syncing:'Downloading the official current MIMIT snapshot…',
@@ -210,9 +236,16 @@ const I18N={
   radius:'Raggio',fill:'Rifornimento',freshness:'Freschezza',all:'tutti',refresh:'Aggiorna mappa',syncCurrent:'Sincronizza snapshot attuale',myLocation:'La mia posizione',
   ready:'Pronto.',bestNearby:'Migliori prezzi nei dintorni',rankSubtitle:'La classifica ignora marchi/recensioni. La distanza è in linea d’aria dal punto selezionato.',
   sort:'Ordina',price:'Prezzo',distance:'Distanza',savings:'Risparmio vs mediana',show:'Mostra',distribution:'Distribuzione prezzi attuale',
-  relativePrice:'Prezzo relativo',helpTitle:'Controlli mappa',helpIntro:'Clicca sulla mappa per spostare il punto di ricerca. Il cerchio tratteggiato indica il raggio attivo.',
+  relativePrice:'Prezzo relativo',helpTitle:'Guida mappa',helpIntro:'Clicca sulla mappa per spostare il punto di ricerca. Il cerchio tratteggiato indica il raggio attivo.',
   shortcuts:'Scorciatoie da tastiera',panNorth:'Sposta a nord',panWest:'Sposta a ovest',panSouth:'Sposta a sud',panEast:'Sposta a est',zoom:'Zoom avanti / indietro',recenter:'Ricentra',
-  focusSearch:'Vai alla ricerca',close:'Chiudi popup/menu',historyTitle:'Storico',
+  focusSearch:'Vai alla ricerca',close:'Chiudi popup/menu',
+  guideIntroTitle:'Come usare la mappa',
+  guideIntro:'Cerca una località, clicca sulla mappa oppure usa la posizione del browser per scegliere il punto centrale. Il cerchio tratteggiato è il raggio di ricerca attivo.',
+  guideDataTitle:'Prezzi e classifica',
+  guideData:'Scegli carburante, modalità di servizio e freschezza. Mappa e classifica usano lo stesso insieme di stazioni filtrate. “Mostra” cambia solo il numero di righe della classifica; l’istogramma descrive sempre tutte le stazioni filtrate.',
+  guideReadTitle:'Come leggere una stazione',
+  guideRead:'Ogni stazione mostra prezzo corrente comunicato, distanza in linea d’aria, età del prezzo e risparmio rispetto alla mediana locale per la quantità di rifornimento scelta. Clicca una riga o un marker per aprire i dettagli.',
+  historyTitle:'Storico',
   historyHelp:'Le viste 7/30/90 giorni leggono solo le date già presenti nel database SQLite locale. La sincronizzazione aggiunge soltanto lo snapshot ufficiale più recente. Lo snapshot nazionale corrente non viene conservato giorno per giorno: lo storico viene mantenuto solo per gli impianti nelle aree che consulti, così lo spazio occupato resta ridotto.',
   stations:'stazioni',hiddenStale:'nascoste perché vecchie',min:'min',median:'mediana',max:'max',snapshot:'snapshot',registry:'anagrafica',
   localHistory:'storico locale',snapshotDays:'giorni snapshot',tracked:'impianti tracciati',syncing:'Scarico lo snapshot MIMIT attuale…',
