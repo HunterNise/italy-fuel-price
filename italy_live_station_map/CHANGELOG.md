@@ -13,6 +13,21 @@ formal semantic-version tags. Semver becomes the canonical version scheme from
 ### Planned
 - Evaluate route-aware fuel-stop planning without coupling it to the station-map core.
 
+## [0.8.3] - 2026-09-19
+
+### Added
+- Price-label density modes: all, cheapest ~30%, or hover-only, with automatic full labels at close zoom.
+- Bidirectional station selection between map markers and ranking rows.
+- Fit-to-radius control.
+- Persistent UI preferences for map centre/location label, fuel, service mode, radius, fill size, freshness, ranking options, label mode and collapsed-panel states.
+- Context summary in the collapsed top panel so screenshots retain location and active settings.
+
+### Changed
+- Moved the relative-price legend back into the bottom-left corner and placed the Leaflet distance scale immediately beside it.
+- Collapsed top controls now shrink into a compact contextual card instead of an empty title bar.
+- Ranking addresses are visually compacted to reduce vertical noise.
+- Help text now documents label-density and station-selection behavior.
+
 ## [0.8.2] - 2026-09-19
 
 ### Changed

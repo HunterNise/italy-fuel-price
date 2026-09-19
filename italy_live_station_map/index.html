@@ -10,39 +10,65 @@
 <body>
 <div id="map"></div>
 
-<div class="panel">
+<div class="panel" id="controlPanel">
   <div class="panel-head">
-    <div class="title" data-i18n="title">MIMIT station prices</div>
-    <div class="hint" data-i18n="subtitle">official daily data, joined locally</div>
+    <div class="panel-identity">
+      <div class="title" data-i18n="title">MIMIT station prices</div>
+      <div class="hint panel-subtitle" data-i18n="subtitle">official daily data, joined locally</div>
+      <div class="collapsed-summary" id="collapsedSummary" aria-live="polite"></div>
+    </div>
     <div class="head-spacer"></div>
     <button class="icon-btn lang-btn" id="langToggle" title="Language"></button>
     <button class="icon-btn" id="helpBtn" title="Help / shortcuts">?</button>
     <button class="icon-btn" id="collapseControls" title="Collapse controls">▴</button>
   </div>
+
   <div id="controlBody" class="control-body">
     <form id="searchForm" class="search-row">
       <input id="locationSearch" autocomplete="off" data-i18n-placeholder="searchPlaceholder" placeholder="Search a place in Italy…"/>
       <button class="icon-btn" type="submit" title="Search">⌕</button>
       <div id="searchResults" class="search-results"></div>
     </form>
+
     <div class="row">
       <label><span data-i18n="fuel">Fuel</span>
-        <select id="fuel"><option value="Benzina" selected data-i18n="petrol">Petrol</option><option value="Gasolio" data-i18n="diesel">Diesel</option><option value="GPL">GPL</option><option value="Metano" data-i18n="methane">Methane</option></select>
+        <select id="fuel">
+          <option value="Benzina" selected data-i18n="petrol">Petrol</option>
+          <option value="Gasolio" data-i18n="diesel">Diesel</option>
+          <option value="GPL">GPL</option>
+          <option value="Metano" data-i18n="methane">Methane</option>
+        </select>
       </label>
       <label><span data-i18n="mode">Mode</span>
         <select id="mode"><option value="1" selected data-i18n="self">Self-service</option><option value="0" data-i18n="served">Served</option></select>
       </label>
-      <label><span data-i18n="radius">Radius</span><input id="radius" type="range" min="1" max="25" step="1" value="5"/><span id="radiusValue" class="control-value">5 km</span></label>
-      <label><span data-i18n="fill">Fill</span><input id="fillLitres" type="range" min="10" max="100" step="5" value="50"/><span id="fillLitresValue" class="control-value">50 L</span></label>
+      <label><span data-i18n="radius">Radius</span>
+        <input id="radius" type="range" min="1" max="25" step="1" value="5"/>
+        <span id="radiusValue" class="control-value">5 km</span>
+      </label>
+      <button class="action-btn compact-action" id="fitRadius" type="button" data-i18n="fitRadius">Fit radius</button>
+      <label><span data-i18n="fill">Fill</span>
+        <input id="fillLitres" type="range" min="10" max="100" step="5" value="50"/>
+        <span id="fillLitresValue" class="control-value">50 L</span>
+      </label>
     </div>
+
     <div class="row">
       <label><span data-i18n="freshness">Freshness</span>
         <select id="maxAgeDays"><option value="all" data-i18n="all">all</option><option value="1">≤1 day</option><option value="2">≤2 days</option><option value="3" selected>≤3 days</option><option value="5">≤5 days</option><option value="7">≤7 days</option></select>
+      </label>
+      <label><span data-i18n="labels">Labels</span>
+        <select id="labelMode">
+          <option value="all" data-i18n="labelsAll">All</option>
+          <option value="cheapest" selected data-i18n="labelsCheapest">Cheapest</option>
+          <option value="hover" data-i18n="labelsHover">Hover</option>
+        </select>
       </label>
       <button class="action-btn" id="refresh" data-i18n="refresh">Refresh map</button>
       <button class="action-btn" id="sync" data-i18n="syncCurrent">Sync current snapshot</button>
       <button class="action-btn" id="locate" data-i18n="myLocation">Use my location</button>
     </div>
+
     <div class="row"><div id="stats"></div></div>
     <div id="status" data-i18n="ready">Ready.</div>
   </div>
@@ -90,24 +116,19 @@
     </div>
 
     <h3 data-i18n="guideIntroTitle">Using the map</h3>
-    <p data-i18n="guideIntro">
-      Search for a place, click the map, or use your browser location to choose the centre point. The dashed circle is the active search radius.
-    </p>
+    <p data-i18n="guideIntro">Search for a place, click the map, or use your browser location to choose the centre point. The dashed circle is the active search radius.</p>
 
     <h3 data-i18n="guideDataTitle">Prices and ranking</h3>
-    <p data-i18n="guideData">
-      Choose fuel, service mode and freshness. The map and ranking use the same filtered station set. “Show” changes only how many ranking rows are displayed; the histogram always describes all filtered stations.
-    </p>
+    <p data-i18n="guideData">Choose fuel, service mode, freshness and label density. The map and ranking use the same filtered station set. “Show” changes only how many ranking rows are displayed; the histogram always describes all filtered stations.</p>
 
-    <h3 data-i18n="guideReadTitle">Reading a station</h3>
-    <p data-i18n="guideRead">
-      Each station shows the current reported price, straight-line distance, price age and savings versus the local median for your selected fill size. Click a ranked row or map marker to open its details.
-    </p>
+    <h3 data-i18n="guideReadTitle">Reading and selecting stations</h3>
+    <p data-i18n="guideRead">Click a map marker or ranking row to select the same station in both views. The selected marker becomes larger and the ranking row is highlighted. “Fit radius” frames the complete search circle.</p>
+
+    <h3 data-i18n="labelsHelpTitle">Price labels</h3>
+    <p data-i18n="labelsHelp">All shows every price label, Cheapest keeps labels for roughly the cheapest 30% of filtered stations, and Hover keeps the map clean until you point at a marker. At close zoom levels all labels are shown automatically.</p>
 
     <h3 data-i18n="historyTitle">History</h3>
-    <p data-i18n="historyHelp">
-      The 7/30/90-day views read only dates already stored in the local SQLite database. Sync adds the newest official snapshot only. The current nationwide snapshot is not retained day-by-day; history is kept only for stations in areas you view, so disk use stays small.
-    </p>
+    <p data-i18n="historyHelp">The 7/30/90-day views read only dates already stored in the local SQLite database. Sync adds the newest official snapshot only. The current nationwide snapshot is not retained day-by-day; history is kept only for stations in areas you view, so disk use stays small.</p>
 
     <h3 data-i18n="shortcuts">Keyboard shortcuts</h3>
     <div class="shortcuts">
