@@ -1,111 +1,303 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Italy live fuel station prices</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Italy MIMIT fuel station prices</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-html,body,#map{height:100%;margin:0}body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}#map{background:#e9ecef}
-.panel{position:absolute;z-index:1000;top:12px;left:12px;width:min(600px,calc(100vw - 24px));background:rgba(255,255,255,.96);border:1px solid #0002;border-radius:10px;box-shadow:0 2px 12px #0003;padding:10px 12px}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row+.row{margin-top:8px}label{font-size:12px;color:#333}
-select,button{font:inherit;font-size:13px;padding:5px 7px;border:1px solid #bbb;border-radius:6px;background:#fff}button{cursor:pointer}button:hover{background:#f2f2f2}
-#status{font-size:12px;color:#555;line-height:1.3}.hint{font-size:11px;color:#666}#stats{display:flex;gap:8px;flex-wrap:wrap;font-size:12px}.stat{background:#f3f4f6;border-radius:999px;padding:3px 8px;border:1px solid #e5e7eb}
+html,body,#map{height:100%;margin:0}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+#map{background:#e9ecef}
+.panel{position:absolute;z-index:1000;top:12px;left:12px;width:min(650px,calc(100vw - 24px));background:#fffffff5;border:1px solid #0002;border-radius:10px;box-shadow:0 2px 12px #0003;padding:10px 12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row+.row{margin-top:8px}
+label{font-size:12px;color:#333}
+select,button{font:inherit;font-size:13px;padding:5px 7px;border:1px solid #bbb;border-radius:6px;background:#fff}button{cursor:pointer}
+#status{font-size:12px;color:#555;line-height:1.35}.hint{font-size:11px;color:#666}
+#stats{display:flex;gap:8px;flex-wrap:wrap;font-size:12px}
+.stat{background:#f3f4f6;border-radius:999px;padding:3px 8px;border:1px solid #e5e7eb}
 .legend{position:absolute;z-index:1000;right:12px;bottom:22px;background:#fffffff2;padding:8px 10px;border-radius:8px;box-shadow:0 1px 8px #0002;font-size:12px;min-width:175px}
-.gradient{height:10px;border-radius:5px;background:linear-gradient(90deg,hsl(120,65%,42%),hsl(60,75%,48%),hsl(0,72%,52%));margin:5px 0 3px}.legend-row{display:flex;justify-content:space-between}
+.gradient{height:10px;border-radius:5px;background:linear-gradient(90deg,hsl(120,65%,42%),hsl(60,75%,48%),hsl(0,72%,52%));margin:5px 0 3px}
+.legend-row{display:flex;justify-content:space-between}
 .price-label{color:#111;font-weight:750;font-size:11px;line-height:1;background:#ffffffe8;border:1px solid #0003;border-radius:4px;padding:2px 3px;white-space:nowrap;box-shadow:0 1px 2px #0002}
-.leaflet-tooltip.price-tip{background:transparent;border:0;box-shadow:none;padding:0}.leaflet-tooltip.price-tip:before{display:none}
-.popup-price{font-size:20px;font-weight:750}.popup-meta{margin-top:5px;color:#555;font-size:12px}.center-dot{width:10px;height:10px;border-radius:50%;background:#111;border:2px solid #fff;box-shadow:0 0 0 1px #111}
-.history-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:9px;border-top:1px solid #ddd;padding-top:7px}.history-btns button{font-size:11px;padding:2px 5px}
-.spark-wrap{margin-top:5px}.spark-meta{font-size:10.5px;color:#666;margin-top:2px}.spark-empty{font-size:11px;color:#777;padding:8px 0}
+.leaflet-tooltip.price-tip{background:transparent;border:0;box-shadow:none;padding:0}
+.leaflet-tooltip.price-tip:before{display:none}
+.popup-price{font-size:20px;font-weight:750}
+.popup-meta{margin-top:5px;color:#555;font-size:12px}
+.center-dot{width:10px;height:10px;border-radius:50%;background:#111;border:2px solid #fff;box-shadow:0 0 0 1px #111}
+.history-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:9px;border-top:1px solid #ddd;padding-top:7px}
+.history-btns button{font-size:11px;padding:2px 5px}
+.spark-meta{font-size:10.5px;color:#666;margin-top:2px}
+.spark-empty{font-size:11px;color:#777;padding:8px 0}
+.warn{color:#8a5700}
 @media(max-width:620px){.panel{font-size:12px}.legend{bottom:16px}}
 </style>
 </head>
 <body>
 <div id="map"></div>
+
 <div class="panel">
- <div class="row"><strong>Live station prices</strong><span class="hint">MIMIT data · click map to search there</span></div>
- <div class="row">
-  <label>Fuel <select id="fuel"><option value="Benzina">Petrol</option><option value="Gasolio" selected>Diesel</option><option value="GPL">GPL</option><option value="Metano">Methane</option></select></label>
-  <label>Mode <select id="mode"><option value="1" selected>Self-service</option><option value="0">Served</option></select></label>
-  <label>Radius <input id="radius" type="range" min="1" max="10" step="1" value="5"/> <span id="radiusValue">5 km</span></label>
-  <button id="refresh">Refresh</button><button id="locate">Use my location</button>
- </div>
- <div class="row"><div id="stats"></div></div><div id="status">Ready.</div>
+  <div class="row">
+    <strong>MIMIT station prices</strong>
+    <span class="hint">official daily CSVs, joined locally · click map to recenter</span>
+  </div>
+  <div class="row">
+    <label>Fuel
+      <select id="fuel">
+        <option value="Benzina">Petrol</option>
+        <option value="Gasolio" selected>Diesel</option>
+        <option value="GPL">GPL</option>
+        <option value="Metano">Methane</option>
+      </select>
+    </label>
+    <label>Mode
+      <select id="mode">
+        <option value="1" selected>Self-service</option>
+        <option value="0">Served</option>
+      </select>
+    </label>
+    <label>Radius
+      <input id="radius" type="range" min="1" max="25" step="1" value="5"/>
+      <span id="radiusValue">5 km</span>
+    </label>
+    <button id="refresh">Refresh map</button>
+    <button id="sync">Sync MIMIT files</button>
+    <button id="locate">Use my location</button>
+  </div>
+  <div class="row"><div id="stats"></div></div>
+  <div id="status">Ready.</div>
 </div>
-<div class="legend"><strong>Relative price</strong><div class="gradient"></div><div class="legend-row"><span id="lmin">low</span><span id="lmed">median</span><span id="lmax">high</span></div></div>
+
+<div class="legend">
+  <strong>Relative price</strong>
+  <div class="gradient"></div>
+  <div class="legend-row">
+    <span id="lmin">low</span><span id="lmed">median</span><span id="lmax">high</span>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const START={lat:43.9303,lon:10.9079};
 const map=L.map('map').setView([START.lat,START.lon],13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19,attribution:'&copy; OpenStreetMap contributors'
+}).addTo(map);
 L.control.scale({imperial:false}).addTo(map);
-const markerLayer=L.layerGroup().addTo(map);let centerMarker=null,current={...START},stations=[],requestSeq=0;
 
-const $=id=>document.getElementById(id);
+const layer=L.layerGroup().addTo(map);
+let center=null,current={...START},stations=[],requestSeq=0;
+const $=x=>document.getElementById(x);
+
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
-function qtl(a,q){if(!a.length)return NaN;const p=(a.length-1)*q,l=Math.floor(p),h=Math.ceil(p);return l===h?a[l]:a[l]*(h-p)+a[h]*(p-l)}
-function fmt(p){return Number.isFinite(p)?`€${p.toFixed(3)}`:'n/a'}
+function quantile(a,p){if(!a.length)return NaN;const x=(a.length-1)*p,l=Math.floor(x),h=Math.ceil(x);return l===h?a[l]:a[l]*(h-x)+a[h]*(x-l)}
+function fmt(x){return Number.isFinite(x)?`€${x.toFixed(3)}`:'n/a'}
 function color(p,lo,hi){if(!Number.isFinite(p)||hi<=lo)return'hsl(55,70%,48%)';let t=Math.max(0,Math.min(1,(p-lo)/(hi-lo)));return`hsl(${120*(1-t)},70%,45%)`}
-function setCenter(lat,lon){if(centerMarker)centerMarker.remove();centerMarker=L.marker([lat,lon],{icon:L.divIcon({className:'',html:'<div class="center-dot"></div>',iconSize:[14,14],iconAnchor:[7,7]}),interactive:false}).addTo(map)}
-function toggleLabels(){const show=map.getZoom()>=12;markerLayer.eachLayer(l=>{if(!l.getTooltip||!l.getTooltip())return;if(show)l.openTooltip();else l.closeTooltip()})}
 
-function sparkline(points,days){
- if(!points.length)return`<div class="spark-empty">No local history indexed for this period.</div>`;
- const W=250,H=72,P=8, vals=points.map(p=>+p.price),min=Math.min(...vals),max=Math.max(...vals),span=Math.max(.001,max-min);
- const start=new Date(points[0].date+'T00:00:00'),end=new Date(points[points.length-1].date+'T00:00:00'),dspan=Math.max(1,(end-start)/86400000);
- const xy=points.map(p=>{const d=new Date(p.date+'T00:00:00');return{x:P+((d-start)/86400000)/dspan*(W-2*P),y:H-P-(+p.price-min)/span*(H-2*P),date:p.date,price:+p.price}});
- let paths=[],seg=[];for(let i=0;i<xy.length;i++){if(i&&((new Date(xy[i].date)-new Date(xy[i-1].date))/86400000)>1){if(seg.length)paths.push(seg);seg=[]}seg.push(xy[i])}if(seg.length)paths.push(seg);
- const lines=paths.map(s=>`<polyline fill="none" stroke="#222" stroke-width="1.6" points="${s.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}"/>`).join('');
- const dots=xy.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="1.7" fill="#222"><title>${p.date}: ${fmt(p.price)}</title></circle>`).join('');
- return`<div class="spark-wrap"><svg width="250" height="72" viewBox="0 0 250 72" aria-label="${days}-day station price history">
- <line x1="8" y1="8" x2="8" y2="64" stroke="#bbb" stroke-dasharray="2 3"/><line x1="8" y1="64" x2="242" y2="64" stroke="#bbb" stroke-dasharray="2 3"/>
- ${lines}${dots}<text x="10" y="11" font-size="9">${fmt(max)}</text><text x="10" y="62" font-size="9">${fmt(min)}</text></svg></div>`;
+function setCenter(lat,lon){
+  if(center)center.remove();
+  center=L.marker([lat,lon],{
+    icon:L.divIcon({className:'',html:'<div class="center-dot"></div>',iconSize:[14,14],iconAnchor:[7,7]}),
+    interactive:false
+  }).addTo(map);
 }
 
-async function loadHistory(container,id,fuel,self,days){
- container.innerHTML='<div class="spark-empty">Loading local history…</div>';
- try{
-  const r=await fetch(`/api/history?id=${encodeURIComponent(id)}&fuel=${encodeURIComponent(fuel)}&self=${self?1:0}&days=${days}`,{cache:'no-store'});
-  const d=await r.json();if(!d.ok)throw new Error(d.error||'history error');
-  container.innerHTML=sparkline(d.points,days)+`<div class="spark-meta">${d.observed_days}/${d.requested_days} days available · ${d.missing_days} missing · gaps are not interpolated</div>`;
- }catch(e){container.innerHTML=`<div class="spark-empty">${esc(e.message)}</div>`}
+function toggleLabels(){
+  const show=map.getZoom()>=12;
+  layer.eachLayer(l=>{
+    if(!l.getTooltip||!l.getTooltip())return;
+    if(show)l.openTooltip(); else l.closeTooltip();
+  });
 }
 
-function popupHtml(s){
- const key=`hist-${String(s.id).replace(/[^a-zA-Z0-9_-]/g,'')}-${Math.random().toString(36).slice(2,7)}`;
- return`<div class="popup-price">${fmt(s.price)}</div><div><strong>${esc(s.fuel)}</strong> · ${s.isSelf?'self-service':'served'}</div>
- <div class="popup-meta">Station ID ${esc(s.id)}<br/>${esc(s.address||'')}${s.updated?`<br/>record timestamp: ${esc(s.updated)}`:''}</div>
- <div class="history-head"><strong>Local history</strong><span class="history-btns"><button data-days="30">30d</button> <button data-days="90">90d</button></span></div>
- <div id="${key}" data-history-id="${esc(s.id)}" data-fuel="${esc(s.fuel)}" data-self="${s.isSelf?1:0}"></div>`;
+function spark(points,days){
+  if(!points.length)return'<div class="spark-empty">No indexed history for this period.</div>';
+
+  const W=250,H=72,P=8;
+  const vals=points.map(x=>+x.price);
+  const min=Math.min(...vals),max=Math.max(...vals),span=Math.max(.001,max-min);
+  const start=new Date(points[0].date+'T00:00:00');
+  const end=new Date(points.at(-1).date+'T00:00:00');
+  const dspan=Math.max(1,(end-start)/86400000);
+
+  const xy=points.map(x=>{
+    const d=new Date(x.date+'T00:00:00');
+    return {
+      x:P+((d-start)/86400000)/dspan*(W-2*P),
+      y:H-P-(+x.price-min)/span*(H-2*P),
+      ...x
+    };
+  });
+
+  let segments=[],seg=[];
+  xy.forEach((p,i)=>{
+    if(i && (new Date(p.date)-new Date(xy[i-1].date))/86400000>1){
+      if(seg.length)segments.push(seg);
+      seg=[];
+    }
+    seg.push(p);
+  });
+  if(seg.length)segments.push(seg);
+
+  const lines=segments.map(s=>`<polyline fill="none" stroke="#222" stroke-width="1.6" points="${s.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}"/>`).join('');
+  const dots=xy.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="1.7" fill="#222"><title>${p.date}: ${fmt(+p.price)}</title></circle>`).join('');
+
+  return `<svg width="250" height="72" viewBox="0 0 250 72">
+    <line x1="8" y1="64" x2="242" y2="64" stroke="#bbb" stroke-dasharray="2 3"/>
+    ${lines}${dots}
+    <text x="10" y="11" font-size="9">${fmt(max)}</text>
+    <text x="10" y="62" font-size="9">${fmt(min)}</text>
+  </svg>`;
+}
+
+async function loadHistory(box,id,fuel,self,days){
+  box.innerHTML='<div class="spark-empty">Loading…</div>';
+  try{
+    const r=await fetch(`/api/history?id=${encodeURIComponent(id)}&fuel=${encodeURIComponent(fuel)}&self=${self?1:0}&days=${days}`,{cache:'no-store'});
+    const d=await r.json();
+    if(!d.ok)throw Error(d.error||'history error');
+    box.innerHTML=spark(d.points,days)+`<div class="spark-meta">${d.observed_days}/${d.requested_days} days available · ${d.missing_days} missing · no interpolation</div>`;
+  }catch(e){
+    box.innerHTML=`<div class="spark-empty">${esc(e.message)}</div>`;
+  }
+}
+
+function popup(s){
+  const key=`hist-${String(s.id).replace(/[^a-zA-Z0-9_-]/g,'')}-${Math.random().toString(36).slice(2,6)}`;
+  return `<div class="popup-price">${fmt(s.price)}</div>
+    <div><b>${esc(s.fuel)}</b> · ${s.isSelf?'self-service':'served'} · ${s.distance_km.toFixed(1)} km</div>
+    <div class="popup-meta">
+      Station ID ${esc(s.id)}<br/>
+      ${esc(s.address)}<br/>
+      snapshot: ${esc(s.observed_date)}
+      ${s.updated?`<br/>communicated: ${esc(s.updated)}`:''}
+    </div>
+    <div class="history-head">
+      <b>History</b>
+      <span class="history-btns">
+        <button data-days="30">30d</button>
+        <button data-days="90">90d</button>
+      </span>
+    </div>
+    <div id="${key}" data-history-id="${esc(s.id)}" data-fuel="${esc(s.fuel)}" data-self="${s.isSelf?1:0}"></div>`;
 }
 
 function render(){
- markerLayer.clearLayers();const vals=stations.map(s=>s.price).filter(Number.isFinite),sorted=[...vals].sort((a,b)=>a-b),lo=qtl(sorted,.05),hi=qtl(sorted,.95),med=qtl(sorted,.5);
- for(const s of stations){
-  if(!Number.isFinite(s.lat)||!Number.isFinite(s.lon)||!Number.isFinite(s.price))continue;
-  const c=L.circleMarker([s.lat,s.lon],{radius:9,color:'#222',weight:.7,fillColor:color(s.price,lo,hi),fillOpacity:.92}).addTo(markerLayer);
-  c.bindTooltip(`<span class="price-label">${fmt(s.price)}</span>`,{permanent:true,direction:'top',offset:[0,-7],className:'price-tip',opacity:1});
-  c.bindPopup(popupHtml(s),{maxWidth:290});
-  c.on('popupopen',e=>{
-   const el=e.popup.getElement();if(!el)return;const box=el.querySelector('[data-history-id]');if(!box)return;
-   const id=box.dataset.historyId,f=box.dataset.fuel,self=box.dataset.self==='1';
-   loadHistory(box,id,f,self,30);
-   el.querySelectorAll('[data-days]').forEach(b=>b.addEventListener('click',()=>loadHistory(box,id,f,self,+b.dataset.days)));
+  layer.clearLayers();
+  const values=stations.map(s=>s.price).filter(Number.isFinite).sort((a,b)=>a-b);
+  const lo=quantile(values,.05),hi=quantile(values,.95),med=quantile(values,.5);
+
+  stations.forEach(s=>{
+    const c=L.circleMarker([s.lat,s.lon],{
+      radius:9,color:'#222',weight:.7,
+      fillColor:color(s.price,lo,hi),fillOpacity:.92
+    }).addTo(layer);
+
+    c.bindTooltip(`<span class="price-label">${fmt(s.price)}</span>`,{
+      permanent:true,direction:'top',offset:[0,-7],className:'price-tip',opacity:1
+    });
+    c.bindPopup(popup(s),{maxWidth:310});
+
+    c.on('popupopen',e=>{
+      const el=e.popup.getElement();
+      if(!el)return;
+      const box=el.querySelector('[data-history-id]');
+      if(!box)return;
+      const id=box.dataset.historyId,fuel=box.dataset.fuel,self=box.dataset.self==='1';
+      loadHistory(box,id,fuel,self,30);
+      el.querySelectorAll('[data-days]').forEach(b=>{
+        b.addEventListener('click',()=>loadHistory(box,id,fuel,self,+b.dataset.days));
+      });
+    });
   });
- }
- $('lmin').textContent=vals.length?fmt(Math.min(...vals)):'low';$('lmed').textContent=vals.length?fmt(med):'median';$('lmax').textContent=vals.length?fmt(Math.max(...vals)):'high';
- $('stats').innerHTML=vals.length?`<span class="stat">${vals.length} stations</span><span class="stat">min ${fmt(Math.min(...vals))}</span><span class="stat">median ${fmt(med)}</span><span class="stat">max ${fmt(Math.max(...vals))}</span>`:'<span class="stat">0 stations</span>';
- toggleLabels();
+
+  $('lmin').textContent=values.length?fmt(values[0]):'low';
+  $('lmed').textContent=values.length?fmt(med):'median';
+  $('lmax').textContent=values.length?fmt(values.at(-1)):'high';
+
+  $('stats').innerHTML=values.length
+    ? `<span class="stat">${values.length} stations</span>
+       <span class="stat">min ${fmt(values[0])}</span>
+       <span class="stat">median ${fmt(med)}</span>
+       <span class="stat">max ${fmt(values.at(-1))}</span>`
+    : '<span class="stat">0 stations</span>';
+
+  toggleLabels();
 }
 
 async function loadStations(){
- const seq=++requestSeq,f=$('fuel').value,self=$('mode').value,r=$('radius').value;$('status').textContent='Fetching current MIMIT prices…';
- try{const res=await fetch(`/api/stations?lat=${current.lat}&lon=${current.lon}&radius=${r}&fuel=${encodeURIComponent(f)}&self=${self}`,{cache:'no-store'}),d=await res.json();
-  if(seq!==requestSeq)return;if(!res.ok||!d.ok)throw new Error(d.error||`HTTP ${res.status}`);stations=d.stations||[];render();$('status').textContent=`Updated ${new Date().toLocaleTimeString()} · ${d.backend} · current results are also captured into local rolling history.`;
- }catch(e){if(seq!==requestSeq)return;stations=[];render();$('status').textContent=`Could not fetch live prices: ${e.message}`}}
-function relocate(lat,lon,z=13,reload=true){current={lat,lon};setCenter(lat,lon);map.setView([lat,lon],z);if(reload)loadStations()}
-$('radius').addEventListener('input',e=>$('radiusValue').textContent=`${e.target.value} km`);$('radius').addEventListener('change',loadStations);$('fuel').addEventListener('change',loadStations);$('mode').addEventListener('change',loadStations);$('refresh').addEventListener('click',loadStations);
-$('locate').addEventListener('click',()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>relocate(p.coords.latitude,p.coords.longitude,13,true),e=>$('status').textContent=`Location not used: ${e.message}`):$('status').textContent='Browser geolocation unavailable.');
-map.on('click',e=>relocate(e.latlng.lat,e.latlng.lng,map.getZoom(),true));map.on('zoomend',toggleLabels);setCenter(START.lat,START.lon);loadStations();
+  const seq=++requestSeq;
+  const fuel=$('fuel').value,self=$('mode').value,radius=$('radius').value;
+  $('status').textContent='Loading locally joined MIMIT snapshot…';
+
+  try{
+    const r=await fetch(`/api/stations?lat=${current.lat}&lon=${current.lon}&radius=${radius}&fuel=${encodeURIComponent(fuel)}&self=${self}`,{cache:'no-store'});
+    const d=await r.json();
+    if(seq!==requestSeq)return;
+    if(!r.ok||!d.ok)throw Error(d.error||`HTTP ${r.status}`);
+
+    stations=d.stations||[];
+    render();
+
+    $('status').innerHTML=
+      `snapshot <b>${esc(d.price_date)}</b> · registry ${esc(d.registry_date)} · ${esc(d.backend)}`
+      +(d.warning?`<br/><span class="warn">${esc(d.warning)}</span>`:'');
+  }catch(e){
+    if(seq!==requestSeq)return;
+    stations=[];
+    render();
+    $('status').innerHTML=`<span class="warn">${esc(e.message)}</span>`;
+  }
+}
+
+async function syncNow(){
+  const b=$('sync');
+  b.disabled=true;
+  $('status').textContent='Downloading official MIMIT station registry and price CSVs…';
+
+  try{
+    const r=await fetch('/api/sync',{cache:'no-store'});
+    const d=await r.json();
+    if(!r.ok||!d.ok)throw Error(d.error||`HTTP ${r.status}`);
+    $('status').textContent=`Synced snapshot ${d.price_date}: ${d.stations} stations, ${d.price_rows} price rows.`;
+    await loadStations();
+  }catch(e){
+    $('status').innerHTML=`<span class="warn">Sync failed: ${esc(e.message)}</span>`;
+  }finally{
+    b.disabled=false;
+  }
+}
+
+function relocate(lat,lon,zoom=13,reload=true){
+  current={lat,lon};
+  setCenter(lat,lon);
+  map.setView([lat,lon],zoom);
+  if(reload)loadStations();
+}
+
+$('radius').addEventListener('input',e=>$('radiusValue').textContent=`${e.target.value} km`);
+$('radius').addEventListener('change',loadStations);
+$('fuel').addEventListener('change',loadStations);
+$('mode').addEventListener('change',loadStations);
+$('refresh').addEventListener('click',loadStations);
+$('sync').addEventListener('click',syncNow);
+
+$('locate').addEventListener('click',()=>{
+  if(!navigator.geolocation){
+    $('status').textContent='Browser geolocation unavailable.';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    p=>relocate(p.coords.latitude,p.coords.longitude,13,true),
+    e=>$('status').textContent=`Location not used: ${e.message}`
+  );
+});
+
+map.on('click',e=>relocate(e.latlng.lat,e.latlng.lng,map.getZoom(),true));
+map.on('zoomend',toggleLabels);
+
+setCenter(START.lat,START.lon);
+loadStations();
 </script>
-</body></html>
+</body>
+</html>

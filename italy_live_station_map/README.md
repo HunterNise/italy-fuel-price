@@ -1,150 +1,125 @@
-# Live Italian fuel-station price map — with station history
+# Italy live station-price map — local CSV backend
 
-This package is **standalone**. It does not need to be placed beside the earlier
-national fuel-price toolkit.
+This version does **not** use the fragile public search API.
 
-The earlier toolkit contains national statistical series. Station sparklines
-require a different key: MIMIT `idImpianto`, followed through daily station
-snapshots. For that reason this map maintains its own SQLite database:
+Instead it downloads the two official daily MIMIT CSVs:
 
-```text
-data/station_history.sqlite
-```
+* `anagrafica_impianti_attivi.csv` — station ID + latitude/longitude + address
+* `prezzo_alle_8.csv` — station ID + fuel + price + self/served + communication timestamp
 
-## Start the map
+The server stores them in SQLite and joins them locally by `idImpianto`.
+
+## Run from anywhere
+
+You no longer need to `cd` into the package.
+
+From the parent directory:
 
 ```bash
-python serve_map.py
+./italy_live_station_map/run.sh
 ```
 
-Open:
+Or:
+
+```bash
+python3 italy_live_station_map/serve_map.py
+```
+
+Or with an absolute path:
+
+```bash
+python3 /path/to/italy_live_station_map/serve_map.py
+```
+
+`run.sh` resolves its own directory, so the current shell working directory does
+not matter.
+
+Windows:
+
+```bat
+italy_live_station_map\run.bat
+```
+
+Then open:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-The map records the live station results that you view, so it begins building a
-rolling local history automatically.
+## First synchronization
 
-## 30/90-day station history
+The first map request attempts to download the official MIMIT station registry
+and current daily price file automatically.
 
-Click a station and choose `30d` or `90d`.
-
-The sparkline:
-* uses only observations actually present in the local database;
-* does **not interpolate gaps**;
-* breaks the plotted line when dates are missing;
-* tells you how many requested days are available/missing.
-
-Initially the database can be sparse. There are two ways to fill it.
-
-### 1. Capture the official current 08:00 snapshot every day
+You can also do it explicitly:
 
 ```bash
-python history_index.py capture-current
+python3 italy_live_station_map/sync_current.py
 ```
 
-Optionally keep the raw CSV too:
-
-```bash
-python history_index.py capture-current --save-raw
-```
-
-This is the best way to build the ongoing current-quarter history. MIMIT
-publishes the daily file with prices in force at 08:00 on the day preceding
-publication.
-
-You can schedule this command once per day with cron / Task Scheduler.
-
-### 2. Index completed historical quarters
-
-For example:
-
-```bash
-python history_index.py download-and-index 2026 2
-```
-
-or separately:
-
-```bash
-python history_index.py download-quarter 2026 2
-python history_index.py index-archive cache/2026_2_tr.tar.gz
-```
-
-The quarterly files are large, so they are not bundled. `history_index.py`
-streams the CSV files from the `.tar.gz` and stores only:
-
-* station ID
-* observation date
-* fuel
-* self/served
-* price
-* communication timestamp
-* provenance
-
-in SQLite.
-
-Check coverage:
-
-```bash
-python history_index.py coverage
-```
-
-## Current-quarter limitation
-
-MIMIT's public historical archive is grouped by completed quarterly releases.
-At the time this package was prepared, the page exposed completed archives
-through Q2 2026. Therefore a fresh installation cannot magically reconstruct
-every station's July–September 2026 daily history from the quarterly archive.
-
-The package is explicit about that:
-* completed quarters can be indexed;
-* today's official snapshot can be captured;
-* future daily captures accumulate locally;
-* missing dates stay missing and are shown as gaps.
-
-## Data format
-
-MIMIT documents the daily price file as:
+That saves the raw files under `cache/` and imports them into:
 
 ```text
-idImpianto
-descCarburante
-prezzo
-isSelf
-dtComu
+data/station_history.sqlite
 ```
 
-Line 1 contains the extraction date and line 2 contains the actual CSV header.
+If a later network refresh fails, the map continues using the last successful
+local snapshot and displays a warning.
 
-Delimiter:
-* `;` through 9 February 2026
-* `|` from 10 February 2026
+## Why this is more robust
 
-`history_index.py` detects this from the extraction date.
+The previous version depended on an undocumented/public search endpoint returning
+JSON. That endpoint can return an empty/non-JSON response.
 
-## Live map features
+This version only needs the two official downloadable CSV files. Radius filtering
+and station-price joins happen entirely on your machine.
+
+## Map features
 
 * Petrol / diesel / GPL / methane
 * Self-service / served
-* 1–10 km radius
+* Radius 1–25 km
+* Price labels directly on station dots
+* Green→red coloring relative to the local price distribution
+* Minimum / median / maximum in the current radius
 * Click map to recenter
-* Optional browser geolocation
-* Current price labels directly on the map
-* Green→red relative local-price coloring
-* Minimum / median / maximum summary
+* Browser geolocation if you permit it
+* No ratings, reviews or station-business rankings
+* Technical station ID retained for data joins/history
 * 30/90-day station sparkline
-* No ratings, reviews, brand cards or business-ranking data
+* Missing historical dates remain gaps; no interpolation
 
-## Basemap
+## Historical station prices
 
-Leaflet + OpenStreetMap. No Google Maps API key is required.
+The current daily snapshot is retained in the SQLite database each time you
+synchronize on a new date.
 
-## Demo
+For completed historical quarters:
 
 ```bash
-python serve_map.py --demo
+python3 italy_live_station_map/history_index.py download-and-index 2026 2
 ```
 
-This uses synthetic stations to test the interface. Synthetic points are stored
-with source `synthetic_demo` and should not be used for analysis.
+To inspect what has been indexed:
+
+```bash
+python3 italy_live_station_map/history_index.py coverage
+```
+
+Quarterly archives can be large. They are not bundled with this package.
+
+## Files
+
+```text
+index.html
+serve_map.py
+sync_current.py
+history_index.py
+run.sh
+run.bat
+data/station_history.sqlite
+cache/
+```
+
+The package is standalone and does not depend on the previous national
+fuel-price toolkit.

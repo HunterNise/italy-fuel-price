@@ -1,2 +1,4 @@
-#!/bin/sh
-python3 serve_map.py
+#!/usr/bin/env sh
+set -eu
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+exec python3 "$SCRIPT_DIR/serve_map.py" "$@"
