@@ -123,3 +123,31 @@ cache/
 
 The package is standalone and does not depend on the previous national
 fuel-price toolkit.
+
+
+## Radius overlay and ranked station panel
+
+The map now draws the selected search radius as a light, semi-transparent,
+dashed circle around the selected point.
+
+A side panel ranks stations without using brand, ratings or reviews. By default:
+
+1. lower current price first;
+2. distance is used only as a tie-breaker.
+
+The panel shows:
+
+* current price;
+* straight-line distance from the selected map point;
+* price difference from the current local median;
+* estimated savings/cost relative to that median for a 50-litre fill.
+
+You can also sort the panel by straight-line distance or by savings versus the
+local median. Clicking a ranked row pans to the station and opens its popup.
+
+Important: distance is currently **great-circle/straight-line distance**, not
+driving distance or detour time. Therefore it should not yet be used to decide
+whether a cheaper station is actually worth a detour.
+
+A later trip-planning version should use route distance/time and compare the
+fuel saved against the detour cost rather than ranking on price alone.

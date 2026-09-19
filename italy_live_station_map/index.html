@@ -7,16 +7,16 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 html,body,#map{height:100%;margin:0}
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden}
 #map{background:#e9ecef}
-.panel{position:absolute;z-index:1000;top:12px;left:12px;width:min(650px,calc(100vw - 24px));background:#fffffff5;border:1px solid #0002;border-radius:10px;box-shadow:0 2px 12px #0003;padding:10px 12px}
+.panel{position:absolute;z-index:1000;top:12px;left:12px;width:min(650px,calc(100vw - 390px));background:#fffffff5;border:1px solid #0002;border-radius:10px;box-shadow:0 2px 12px #0003;padding:10px 12px}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row+.row{margin-top:8px}
 label{font-size:12px;color:#333}
 select,button{font:inherit;font-size:13px;padding:5px 7px;border:1px solid #bbb;border-radius:6px;background:#fff}button{cursor:pointer}
 #status{font-size:12px;color:#555;line-height:1.35}.hint{font-size:11px;color:#666}
 #stats{display:flex;gap:8px;flex-wrap:wrap;font-size:12px}
 .stat{background:#f3f4f6;border-radius:999px;padding:3px 8px;border:1px solid #e5e7eb}
-.legend{position:absolute;z-index:1000;right:12px;bottom:22px;background:#fffffff2;padding:8px 10px;border-radius:8px;box-shadow:0 1px 8px #0002;font-size:12px;min-width:175px}
+.legend{position:absolute;z-index:1000;left:12px;bottom:22px;background:#fffffff2;padding:8px 10px;border-radius:8px;box-shadow:0 1px 8px #0002;font-size:12px;min-width:175px}
 .gradient{height:10px;border-radius:5px;background:linear-gradient(90deg,hsl(120,65%,42%),hsl(60,75%,48%),hsl(0,72%,52%));margin:5px 0 3px}
 .legend-row{display:flex;justify-content:space-between}
 .price-label{color:#111;font-weight:750;font-size:11px;line-height:1;background:#ffffffe8;border:1px solid #0003;border-radius:4px;padding:2px 3px;white-space:nowrap;box-shadow:0 1px 2px #0002}
@@ -30,7 +30,44 @@ select,button{font:inherit;font-size:13px;padding:5px 7px;border:1px solid #bbb;
 .spark-meta{font-size:10.5px;color:#666;margin-top:2px}
 .spark-empty{font-size:11px;color:#777;padding:8px 0}
 .warn{color:#8a5700}
-@media(max-width:620px){.panel{font-size:12px}.legend{bottom:16px}}
+
+/* Ranked stations side panel */
+.ranking{
+  position:absolute;z-index:1000;right:12px;top:12px;bottom:12px;width:350px;
+  background:#fffffff8;border:1px solid #0002;border-radius:10px;
+  box-shadow:0 2px 12px #0003;display:flex;flex-direction:column;overflow:hidden
+}
+.rank-head{padding:10px 11px 8px;border-bottom:1px solid #ddd}
+.rank-title{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rank-sub{font-size:11px;color:#666;margin-top:3px;line-height:1.3}
+.rank-controls{display:flex;gap:6px;align-items:center;margin-top:7px}
+.rank-controls select{font-size:11px;padding:3px 5px}
+#rankList{overflow:auto;flex:1;padding:5px}
+.rank-item{
+  display:grid;grid-template-columns:30px 1fr auto;gap:7px;align-items:center;
+  padding:7px 6px;border-radius:7px;border:1px solid transparent;cursor:pointer
+}
+.rank-item:hover{background:#f5f6f7;border-color:#ddd}
+.rank-num{font-size:12px;font-weight:700;text-align:center;color:#555}
+.rank-price{font-weight:760;font-size:15px}
+.rank-detail{font-size:11px;color:#555;line-height:1.35}
+.rank-right{text-align:right}
+.rank-distance{font-size:12px;font-weight:650}
+.rank-saving{font-size:10.5px;color:#286b35;margin-top:2px}
+.rank-delta{font-size:10.5px;color:#666;margin-top:2px}
+.rank-empty{font-size:12px;color:#666;padding:15px 9px}
+.rank-footer{font-size:10.5px;color:#666;border-top:1px solid #ddd;padding:7px 10px;line-height:1.3}
+#panelToggle{display:none}
+
+@media(max-width:950px){
+  .panel{width:min(570px,calc(100vw - 380px))}
+}
+@media(max-width:760px){
+  .panel{right:12px;width:auto}
+  .ranking{top:auto;height:42%;left:12px;right:12px;width:auto}
+  .legend{bottom:calc(42% + 24px)}
+  #panelToggle{display:inline-block}
+}
 </style>
 </head>
 <body>
@@ -68,6 +105,39 @@ select,button{font:inherit;font-size:13px;padding:5px 7px;border:1px solid #bbb;
   <div id="status">Ready.</div>
 </div>
 
+<div class="ranking" id="ranking">
+  <div class="rank-head">
+    <div class="rank-title">
+      <strong>Best prices nearby</strong>
+      <span id="rankCount" class="hint"></span>
+    </div>
+    <div class="rank-sub">
+      Price ranking is independent of ratings/brands. Distance is straight-line from the selected map point.
+    </div>
+    <div class="rank-controls">
+      <label>Sort
+        <select id="rankSort">
+          <option value="price">Price</option>
+          <option value="distance">Distance</option>
+          <option value="saving">Savings vs median</option>
+        </select>
+      </label>
+      <label>Show
+        <select id="rankLimit">
+          <option value="10" selected>10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="all">all</option>
+        </select>
+      </label>
+    </div>
+  </div>
+  <div id="rankList"></div>
+  <div class="rank-footer">
+    “Savings” is relative to the current area median for a 50 L fill. It does not include the cost of driving to the station.
+  </div>
+</div>
+
 <div class="legend">
   <strong>Relative price</strong>
   <div class="gradient"></div>
@@ -86,20 +156,39 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 L.control.scale({imperial:false}).addTo(map);
 
 const layer=L.layerGroup().addTo(map);
-let center=null,current={...START},stations=[],requestSeq=0;
+let center=null,radiusCircle=null,current={...START},stations=[],requestSeq=0,markerById=new Map();
 const $=x=>document.getElementById(x);
 
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
 function quantile(a,p){if(!a.length)return NaN;const x=(a.length-1)*p,l=Math.floor(x),h=Math.ceil(x);return l===h?a[l]:a[l]*(h-x)+a[h]*(x-l)}
 function fmt(x){return Number.isFinite(x)?`€${x.toFixed(3)}`:'n/a'}
 function color(p,lo,hi){if(!Number.isFinite(p)||hi<=lo)return'hsl(55,70%,48%)';let t=Math.max(0,Math.min(1,(p-lo)/(hi-lo)));return`hsl(${120*(1-t)},70%,45%)`}
+function cents(x){return `${(x*100).toFixed(1)}¢/L`}
 
-function setCenter(lat,lon){
+function setSearchGeometry(lat,lon){
   if(center)center.remove();
   center=L.marker([lat,lon],{
     icon:L.divIcon({className:'',html:'<div class="center-dot"></div>',iconSize:[14,14],iconAnchor:[7,7]}),
     interactive:false
   }).addTo(map);
+
+  const radiusKm=+$('radius').value;
+  if(radiusCircle)radiusCircle.remove();
+  radiusCircle=L.circle([lat,lon],{
+    radius:radiusKm*1000,
+    color:'#555',
+    weight:1.2,
+    opacity:.45,
+    dashArray:'4 5',
+    fillColor:'#777',
+    fillOpacity:.055,
+    interactive:false
+  }).addTo(map);
+}
+
+function updateRadiusCircle(){
+  if(!radiusCircle)return;
+  radiusCircle.setRadius(+$('radius').value*1000);
 }
 
 function toggleLabels(){
@@ -182,8 +271,67 @@ function popup(s){
     <div id="${key}" data-history-id="${esc(s.id)}" data-fuel="${esc(s.fuel)}" data-self="${s.isSelf?1:0}"></div>`;
 }
 
+function openStation(id){
+  const marker=markerById.get(String(id));
+  if(!marker)return;
+  map.panTo(marker.getLatLng());
+  marker.openPopup();
+}
+
+function renderRanking(values,median){
+  const mode=$('rankSort').value;
+  const limitRaw=$('rankLimit').value;
+
+  const enriched=stations.map(s=>({
+    ...s,
+    delta:s.price-median,
+    saving50:(median-s.price)*50
+  }));
+
+  enriched.sort((a,b)=>{
+    if(mode==='distance') return a.distance_km-b.distance_km || a.price-b.price;
+    if(mode==='saving') return b.saving50-a.saving50 || a.distance_km-b.distance_km;
+    return a.price-b.price || a.distance_km-b.distance_km;
+  });
+
+  const shown=limitRaw==='all'?enriched:enriched.slice(0,+limitRaw);
+  $('rankCount').textContent=`${enriched.length} stations`;
+
+  if(!shown.length){
+    $('rankList').innerHTML='<div class="rank-empty">No stations in the current selection.</div>';
+    return;
+  }
+
+  $('rankList').innerHTML=shown.map((s,i)=>{
+    const saving=s.saving50>0.005?`save ${fmt(s.saving50)} / 50 L`:
+                 s.saving50<-0.005?`${fmt(Math.abs(s.saving50))} above median / 50 L`:
+                 'at local median';
+    const delta=Math.abs(s.delta)<.0005?'median price':
+      s.delta<0?`${cents(Math.abs(s.delta))} below median`:`${cents(s.delta)} above median`;
+
+    return `<div class="rank-item" data-id="${esc(s.id)}">
+      <div class="rank-num">${i+1}</div>
+      <div>
+        <div class="rank-price">${fmt(s.price)}</div>
+        <div class="rank-detail">${esc(s.address || `Station ${s.id}`)}</div>
+        <div class="rank-delta">${delta}</div>
+      </div>
+      <div class="rank-right">
+        <div class="rank-distance">${s.distance_km.toFixed(1)} km</div>
+        <div class="rank-saving">${saving}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  $('rankList').querySelectorAll('.rank-item').forEach(el=>{
+    el.addEventListener('click',()=>openStation(el.dataset.id));
+  });
+}
+
 function render(){
   layer.clearLayers();
+  markerById.clear();
+
   const values=stations.map(s=>s.price).filter(Number.isFinite).sort((a,b)=>a-b);
   const lo=quantile(values,.05),hi=quantile(values,.95),med=quantile(values,.5);
 
@@ -192,6 +340,8 @@ function render(){
       radius:9,color:'#222',weight:.7,
       fillColor:color(s.price,lo,hi),fillOpacity:.92
     }).addTo(layer);
+
+    markerById.set(String(s.id),c);
 
     c.bindTooltip(`<span class="price-label">${fmt(s.price)}</span>`,{
       permanent:true,direction:'top',offset:[0,-7],className:'price-tip',opacity:1
@@ -222,6 +372,7 @@ function render(){
        <span class="stat">max ${fmt(values.at(-1))}</span>`
     : '<span class="stat">0 stations</span>';
 
+  renderRanking(values,med);
   toggleLabels();
 }
 
@@ -270,17 +421,22 @@ async function syncNow(){
 
 function relocate(lat,lon,zoom=13,reload=true){
   current={lat,lon};
-  setCenter(lat,lon);
+  setSearchGeometry(lat,lon);
   map.setView([lat,lon],zoom);
   if(reload)loadStations();
 }
 
-$('radius').addEventListener('input',e=>$('radiusValue').textContent=`${e.target.value} km`);
+$('radius').addEventListener('input',e=>{
+  $('radiusValue').textContent=`${e.target.value} km`;
+  updateRadiusCircle();
+});
 $('radius').addEventListener('change',loadStations);
 $('fuel').addEventListener('change',loadStations);
 $('mode').addEventListener('change',loadStations);
 $('refresh').addEventListener('click',loadStations);
 $('sync').addEventListener('click',syncNow);
+$('rankSort').addEventListener('change',render);
+$('rankLimit').addEventListener('change',render);
 
 $('locate').addEventListener('click',()=>{
   if(!navigator.geolocation){
@@ -296,7 +452,7 @@ $('locate').addEventListener('click',()=>{
 map.on('click',e=>relocate(e.latlng.lat,e.latlng.lng,map.getZoom(),true));
 map.on('zoomend',toggleLabels);
 
-setCenter(START.lat,START.lon);
+setSearchGeometry(START.lat,START.lon);
 loadStations();
 </script>
 </body>
