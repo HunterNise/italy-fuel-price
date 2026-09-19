@@ -182,3 +182,31 @@ Freshness is shown in each ranked row and station popup. Observations older than
 No missing date or missing freshness value is silently fabricated. If a
 communication timestamp cannot be parsed, that station is excluded by a finite
 freshness filter and remains visible only when `Freshness = all`.
+
+
+## Price percentile and distribution
+
+The ranking panel now includes a small histogram of the currently visible
+station prices. The histogram is recalculated whenever you change:
+
+* center point;
+* radius;
+* fuel;
+* self-service / served mode;
+* freshness filter.
+
+The dashed vertical line in the mini-chart marks the visible-station median.
+The panel also reports the total price spread in cents/litre.
+
+Each ranked station shows a percentile-style statement such as:
+
+```text
+cheaper than 84% of visible stations
+```
+
+This is computed directly from the current filtered station set. Lower prices
+are better, so the percentage is the share of visible stations with a strictly
+higher price. Equal-price ties are not counted as more expensive.
+
+This is intentionally descriptive rather than a composite score: the price
+percentile does not incorporate distance, freshness or detour cost.
