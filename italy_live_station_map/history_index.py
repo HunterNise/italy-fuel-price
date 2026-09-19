@@ -149,7 +149,7 @@ def coverage():
 
 def main():
     p = argparse.ArgumentParser(
-        description="Index MIMIT historical station-price archives."
+        description="Optional: index completed MIMIT quarterly station-price archives. The live map does not need this for current snapshots."
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 

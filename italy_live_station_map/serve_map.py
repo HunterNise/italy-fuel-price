@@ -22,11 +22,11 @@ CACHE = HERE / "cache"
 
 PRICE_URL = "https://www.mimit.gov.it/images/exportCSV/prezzo_alle_8.csv"
 STATION_URL = "https://www.mimit.gov.it/images/exportCSV/anagrafica_impianti_attivi.csv"
+NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
 ISO_DATE = re.compile(r"(\d{4}-\d{2}-\d{2})")
 SYNC_LOCK = threading.Lock()
-LAST_SYNC_ATTEMPT = 0.0
-SYNC_RETRY_SECONDS = 300
+SYNC_RETRY_SECONDS = 6 * 60 * 60  # automatic refresh at most every six hours
 
 
 def init_db():
@@ -79,12 +79,12 @@ def parse_extract_date(first_line: str) -> str:
     return m.group(1)
 
 
-def download(url: str, timeout: float = 90) -> bytes:
+def download(url: str, timeout: float = 90, accept: str = "text/csv,*/*;q=0.8") -> bytes:
     req = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "ItalyFuelPriceMap/3.1",
-            "Accept": "text/csv,*/*;q=0.8",
+            "User-Agent": "ItalyFuelPriceMap/7.0",
+            "Accept": accept,
         },
     )
     with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -150,6 +150,7 @@ def ingest_registry(blob: bytes):
             continue
         if not (-90 <= lat <= 90 and -180 <= lon <= 180):
             continue
+
         rows.append(
             (
                 station_id,
@@ -249,22 +250,21 @@ def ingest_prices(blob: bytes, source: str = "mimit_08_current"):
 
 
 def sync_current(save_raw: bool = True):
-    """
-    Download the two official current MIMIT CSV files and join them locally later.
-    Both raw files are cached so failures can be diagnosed without another request.
-    """
+    """Download today's official station registry and 08:00 price snapshot."""
     init_db()
     CACHE.mkdir(parents=True, exist_ok=True)
 
-    registry_blob = download(STATION_URL)
-    price_blob = download(PRICE_URL)
+    with SYNC_LOCK:
+        registry_blob = download(STATION_URL)
+        price_blob = download(PRICE_URL)
 
-    if save_raw:
-        (CACHE / "anagrafica_impianti_attivi.csv").write_bytes(registry_blob)
-        (CACHE / "prezzo_alle_8.csv").write_bytes(price_blob)
+        if save_raw:
+            # Deliberately overwrite: these two cache files are only the latest raw snapshot.
+            (CACHE / "anagrafica_impianti_attivi.csv").write_bytes(registry_blob)
+            (CACHE / "prezzo_alle_8.csv").write_bytes(price_blob)
 
-    registry_date, nstations = ingest_registry(registry_blob)
-    price_date, nprices = ingest_prices(price_blob)
+        registry_date, nstations = ingest_registry(registry_blob)
+        price_date, nprices = ingest_prices(price_blob)
 
     return {
         "registry_date": registry_date,
@@ -272,6 +272,13 @@ def sync_current(save_raw: bool = True):
         "stations": nstations,
         "price_rows": nprices,
     }
+
+
+def _parse_iso_datetime(value):
+    try:
+        return datetime.fromisoformat(value) if value else None
+    except Exception:
+        return None
 
 
 def sync_state():
@@ -282,39 +289,42 @@ def sync_state():
     state["current_price_rows"] = con.execute(
         "SELECT COUNT(*) FROM prices WHERE source='mimit_08_current'"
     ).fetchone()[0]
+    hist = con.execute(
+        "SELECT MIN(observed_date),MAX(observed_date),COUNT(DISTINCT observed_date) FROM prices"
+    ).fetchone()
+    state["history_start"] = hist[0]
+    state["history_end"] = hist[1]
+    state["history_days"] = hist[2] or 0
     con.close()
     return state
 
 
 def ensure_current():
     """
-    Use local cache immediately if it exists. Attempt a network refresh no more
-    than once every five minutes. A network failure does not destroy the cache.
+    Ensure a usable local snapshot exists. If one exists, refresh only when the
+    last successful sync is older than six hours; on refresh failure keep cache.
     """
-    global LAST_SYNC_ATTEMPT
-
     init_db()
     state = sync_state()
     warning = None
-    now = time.time()
 
     need_data = (
         not state.get("price_date")
         or not state.get("registry_date")
         or state.get("station_rows", 0) == 0
     )
-    refresh_due = now - LAST_SYNC_ATTEMPT >= SYNC_RETRY_SECONDS
+    last_sync = _parse_iso_datetime(state.get("last_sync"))
+    refresh_due = (
+        last_sync is None
+        or (datetime.now() - last_sync).total_seconds() >= SYNC_RETRY_SECONDS
+    )
 
     if need_data or refresh_due:
-        with SYNC_LOCK:
-            now = time.time()
-            if need_data or now - LAST_SYNC_ATTEMPT >= SYNC_RETRY_SECONDS:
-                LAST_SYNC_ATTEMPT = now
-                try:
-                    sync_current(save_raw=True)
-                except Exception as e:
-                    warning = f"Live MIMIT CSV refresh failed; using cache if available: {e}"
-                state = sync_state()
+        try:
+            sync_current(save_raw=True)
+        except Exception as e:
+            warning = f"Live MIMIT CSV refresh failed; using cache if available: {e}"
+        state = sync_state()
 
     if (
         not state.get("price_date")
@@ -326,7 +336,6 @@ def ensure_current():
             + "No cached MIMIT snapshot is available. "
               "Run `python3 sync_current.py` while connected to the internet."
         )
-
     return state, warning
 
 
@@ -340,11 +349,6 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return 2 * earth * math.asin(math.sqrt(h))
 
 
-def latest_price_source(con, state, fuel, want_self):
-    # Prefer the official current snapshot. There is no interpolation.
-    return state["price_date"], "mimit_08_current"
-
-
 def nearby(lat, lon, radius, fuel, want_self):
     state, warning = ensure_current()
 
@@ -352,14 +356,13 @@ def nearby(lat, lon, radius, fuel, want_self):
     dlon = radius / (111.0 * max(0.2, math.cos(math.radians(lat))))
 
     con = sqlite3.connect(DB)
-    obs_date, source = latest_price_source(con, state, fuel, want_self)
     rows = con.execute(
         """
         SELECT s.station_id,s.lat,s.lon,s.address,s.comune,s.provincia,s.road_type,
                p.price,p.communicated_at,p.observed_date
         FROM stations s
         JOIN prices p ON p.station_id=s.station_id
-        WHERE p.source=?
+        WHERE p.source='mimit_08_current'
           AND p.observed_date=?
           AND lower(p.fuel)=lower(?)
           AND p.is_self=?
@@ -367,8 +370,7 @@ def nearby(lat, lon, radius, fuel, want_self):
           AND s.lon BETWEEN ? AND ?
         """,
         (
-            source,
-            obs_date,
+            state["price_date"],
             fuel,
             1 if want_self else 0,
             lat - dlat,
@@ -399,9 +401,7 @@ def nearby(lat, lon, radius, fuel, want_self):
                     "id": station_id,
                     "lat": slat,
                     "lon": slon,
-                    "address": ", ".join(
-                        x for x in [address, comune, provincia] if x
-                    ),
+                    "address": ", ".join(x for x in [address, comune, provincia] if x),
                     "road_type": road_type,
                     "price": price,
                     "updated": communicated_at,
@@ -417,11 +417,38 @@ def nearby(lat, lon, radius, fuel, want_self):
 
 
 def history(station_id, fuel, want_self, days):
+    """
+    Fast local history lookup only. No archive is downloaded from this endpoint.
+    The requested window ends on the newest locally available date for this station.
+    """
     init_db()
-    end = date.today()
+    con = sqlite3.connect(DB)
+    latest = con.execute(
+        """
+        SELECT MAX(observed_date) FROM prices
+        WHERE station_id=? AND lower(fuel)=lower(?) AND is_self=?
+        """,
+        (station_id, fuel, 1 if want_self else 0),
+    ).fetchone()[0]
+
+    if not latest:
+        con.close()
+        return {
+            "points": [],
+            "requested_days": days,
+            "observed_days": 0,
+            "missing_days": days,
+            "start": None,
+            "end": None,
+            "available_total_days": 0,
+            "available_start": None,
+            "available_end": None,
+            "interpolated": False,
+        }
+
+    end = date.fromisoformat(latest)
     start = end - timedelta(days=days - 1)
 
-    con = sqlite3.connect(DB)
     rows = con.execute(
         """
         SELECT observed_date,price,source,communicated_at
@@ -438,6 +465,15 @@ def history(station_id, fuel, want_self, days):
             end.isoformat(),
         ),
     ).fetchall()
+
+    overall = con.execute(
+        """
+        SELECT MIN(observed_date),MAX(observed_date),COUNT(DISTINCT observed_date)
+        FROM prices
+        WHERE station_id=? AND lower(fuel)=lower(?) AND is_self=?
+        """,
+        (station_id, fuel, 1 if want_self else 0),
+    ).fetchone()
     con.close()
 
     precedence = {"mimit_08_archive": 0, "mimit_08_current": 1}
@@ -464,13 +500,73 @@ def history(station_id, fuel, want_self, days):
         "missing_days": max(0, days - len(points)),
         "start": start.isoformat(),
         "end": end.isoformat(),
+        "available_total_days": overall[2] or 0,
+        "available_start": overall[0],
+        "available_end": overall[1],
         "interpolated": False,
     }
 
 
+def geocode(query: str, lang: str = "en"):
+    query = (query or "").strip()
+    if not query:
+        return []
+
+    params = urllib.parse.urlencode(
+        {
+            "q": query,
+            "format": "jsonv2",
+            "limit": 6,
+            "countrycodes": "it",
+            "addressdetails": 1,
+            "accept-language": lang,
+        }
+    )
+    req = urllib.request.Request(
+        f"{NOMINATIM_URL}?{params}",
+        headers={
+            "User-Agent": "ItalyFuelPriceMap/7.0 local-map-search",
+            "Accept": "application/json",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=20) as r:
+        raw = json.loads(r.read().decode("utf-8"))
+
+    out = []
+    for item in raw:
+        try:
+            lat = float(item["lat"])
+            lon = float(item["lon"])
+        except Exception:
+            continue
+        bbox = item.get("boundingbox") or []
+        out.append(
+            {
+                "display_name": item.get("display_name", ""),
+                "lat": lat,
+                "lon": lon,
+                "type": item.get("type", ""),
+                "boundingbox": bbox,
+            }
+        )
+    return out
+
+
+def auto_sync_loop(hours: float):
+    if hours <= 0:
+        return
+    interval = max(1800, int(hours * 3600))
+    while True:
+        time.sleep(interval)
+        try:
+            sync_current(save_raw=True)
+            print("[auto-sync] MIMIT current snapshot refreshed", flush=True)
+        except Exception as e:
+            print(f"[auto-sync] refresh failed: {e}", flush=True)
+
+
 class Handler(SimpleHTTPRequestHandler):
     def translate_path(self, path):
-        # Make static-file resolution independent of the shell's working directory.
         url_path = urllib.parse.urlparse(path).path
         relative = Path(url_path.lstrip("/"))
         return str((HERE / relative).resolve())
@@ -487,9 +583,7 @@ class Handler(SimpleHTTPRequestHandler):
                 fuel = q.get("fuel", ["Gasolio"])[0]
                 want_self = q.get("self", ["1"])[0] == "1"
 
-                rows, state, warning = nearby(
-                    lat, lon, radius, fuel, want_self
-                )
+                rows, state, warning = nearby(lat, lon, radius, fuel, want_self)
                 self._json(
                     200,
                     {
@@ -498,6 +592,9 @@ class Handler(SimpleHTTPRequestHandler):
                         "backend": "MIMIT official daily CSVs (local SQLite join)",
                         "price_date": state.get("price_date"),
                         "registry_date": state.get("registry_date"),
+                        "history_days": state.get("history_days", 0),
+                        "history_start": state.get("history_start"),
+                        "history_end": state.get("history_end"),
                         "warning": warning,
                     },
                 )
@@ -510,22 +607,28 @@ class Handler(SimpleHTTPRequestHandler):
                 station_id = q.get("id", [""])[0]
                 fuel = q.get("fuel", ["Gasolio"])[0]
                 want_self = q.get("self", ["1"])[0] == "1"
-                days = max(7, min(365, int(q.get("days", ["30"])[0])))
+                days = max(1, min(365, int(q.get("days", ["7"])[0])))
                 self._json(
                     200,
-                    {
-                        "ok": True,
-                        **history(station_id, fuel, want_self, days),
-                    },
+                    {"ok": True, **history(station_id, fuel, want_self, days)},
                 )
             except Exception as e:
                 self._json(500, {"ok": False, "error": str(e)})
             return
 
+        if u.path == "/api/geocode":
+            try:
+                query = q.get("q", [""])[0]
+                lang = q.get("lang", ["en"])[0]
+                self._json(200, {"ok": True, "results": geocode(query, lang)})
+            except Exception as e:
+                self._json(502, {"ok": False, "error": str(e)})
+            return
+
         if u.path == "/api/sync":
             try:
                 result = sync_current(save_raw=True)
-                self._json(200, {"ok": True, **result})
+                self._json(200, {"ok": True, **result, **sync_state()})
             except Exception as e:
                 self._json(502, {"ok": False, "error": str(e)})
             return
@@ -539,7 +642,6 @@ class Handler(SimpleHTTPRequestHandler):
 
         if u.path == "/":
             self.path = "/index.html"
-
         return super().do_GET()
 
     def _json(self, status, obj):
@@ -561,7 +663,13 @@ def main():
     parser.add_argument(
         "--sync-first",
         action="store_true",
-        help="Synchronize the official MIMIT registry + price CSVs before serving.",
+        help="Synchronize the official MIMIT registry + current price CSV before serving.",
+    )
+    parser.add_argument(
+        "--auto-sync-hours",
+        type=float,
+        default=6.0,
+        help="Refresh the current MIMIT snapshot periodically while the server runs. 0 disables.",
     )
     args = parser.parse_args()
 
@@ -571,11 +679,22 @@ def main():
         result = sync_current(save_raw=True)
         print("Synchronized:", result)
 
+    if args.auto_sync_hours > 0:
+        t = threading.Thread(
+            target=auto_sync_loop,
+            args=(args.auto_sync_hours,),
+            daemon=True,
+        )
+        t.start()
+
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"Serving map at http://{args.host}:{args.port}")
     print(f"Package directory: {HERE}")
     print(f"SQLite database:   {DB}")
-    print("The first map request will refresh the official MIMIT daily CSVs.")
+    print(
+        "History is local-first: current snapshots accumulate as you sync; "
+        "quarterly archives remain optional."
+    )
     print("Press Ctrl+C to stop.")
 
     try:
