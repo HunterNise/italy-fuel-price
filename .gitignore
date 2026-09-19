@@ -1,0 +1,22 @@
+# Station-map runtime data
+/italy_live_station_map/data/
+/italy_live_station_map/cache/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Local configuration
+.env
+.env.*
+!.env.example
+
+# Editors
+.vscode/
+.idea/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+*:Zone.Identifier

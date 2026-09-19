@@ -1,0 +1,24 @@
+column,meaning
+date,Nominal observation/period date used on the x axis.
+period_start,Start of the represented period.
+period_end,End of the represented period.
+frequency,"daily, weekly, monthly, or yearly."
+fuel,"Canonical fuel name, currently petrol or diesel in the bundled observations."
+scope,Geographic scope of the observation.
+network,Road/network/statistical-series scope.
+service_mode,Self-service or other sales mode.
+unit,Measurement unit; comparison scripts reject mixed units.
+final_price,Consumer price including excise and VAT.
+net_price,Net/industrial price before excise and VAT.
+excise,Excise-duty component.
+vat,VAT component.
+total_taxes,excise + VAT.
+final_price_status,"Whether the final price is observed, curated, imported, etc."
+components_status,Whether decomposition is official or derived.
+is_partial,True when the period is incomplete.
+is_interpolated,True only when interpolation was explicitly requested.
+coverage_days,Number of days represented/available for the row.
+expected_days,Expected days for a complete period.
+source_name,Human-readable source/provenance label.
+source_url,Official source URL where applicable.
+source_note,Free-text caveat or import note.

@@ -1,0 +1,7 @@
+fuel,frequency,package_start,package_end,embedded,notes
+petrol,monthly,2000-01-01,2026-09-01,yes,September 2026 is partial; package monthly copy is curated.
+diesel,monthly,2000-01-01,2026-09-01,yes,September 2026 is partial; package monthly copy is curated.
+petrol,daily,2026-09-01,2026-09-18,yes,Curated national daily series; update script can append new official daily page values.
+diesel,daily,2026-09-01,2026-09-18,yes,Curated national daily series; update script can append new official daily page values.
+petrol,weekly,,,no,Official MASE weekly data exist from 2005 but are not embedded in this compact package.
+diesel,weekly,,,no,Official MASE weekly data exist from 2005 but are not embedded in this compact package.
