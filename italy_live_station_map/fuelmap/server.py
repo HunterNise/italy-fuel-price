@@ -121,13 +121,21 @@ class Handler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def _json(self, status, payload):
+        """Write JSON, treating a closed browser socket as a normal disconnect."""
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return True
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            # The browser navigated, reloaded, or superseded this request after
+            # the server had already done the work. This is not a backend 5xx.
+            self.close_connection = True
+            return False
 
 
 def main():

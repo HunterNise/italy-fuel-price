@@ -13,6 +13,15 @@ formal semantic-version tags. Semver becomes the canonical version scheme from
 ### Planned
 - Evaluate route-aware fuel-stop planning without coupling it to the station-map core.
 
+## [0.8.5] - 2026-09-19
+
+### Fixed
+- Treat browser-side socket disconnects (`BrokenPipeError` / connection reset) as normal request cancellation instead of reporting a misleading HTTP 502 and traceback.
+- Suppress duplicate identical `/api/stations` requests while the first matching request is still in flight.
+
+### Changed
+- No database, cache, history, ranking, or MIMIT synchronization behavior changed.
+
 ## [0.8.4] - 2026-09-19
 
 ### Changed

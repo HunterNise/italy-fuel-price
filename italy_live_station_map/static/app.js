@@ -80,7 +80,7 @@ const prefs=loadPrefs();
 let lang=localStorage.getItem('fuelMapLang')||(navigator.language&&navigator.language.toLowerCase().startsWith('it')?'it':'en');
 let current={lat:Number(prefs.lat)||START.lat,lon:Number(prefs.lon)||START.lon};
 let currentLocationLabel=prefs.locationLabel||'Pistoia';
-let center=null,radiusCircle=null,stations=[],shownStations=[],requestSeq=0,markerById=new Map(),lastServerState={},selectedStationId=null,selectionHalo=null;
+let center=null,radiusCircle=null,stations=[],shownStations=[],requestSeq=0,markerById=new Map(),lastServerState={},selectedStationId=null,selectionHalo=null,stationRequestKey=null,stationRequestPromise=null;
 
 function T(key,vars={}){
  let s=(I18N[lang]&&I18N[lang][key])||I18N.en[key]||key;
@@ -290,8 +290,29 @@ function render(){
 }
 
 async function loadStations(){
- const seq=++requestSeq,fuel=$('fuel').value,self=$('mode').value,radius=$('radius').value;$('status').textContent=T('loading');
- try{const r=await fetch(`/api/stations?lat=${current.lat}&lon=${current.lon}&radius=${radius}&fuel=${encodeURIComponent(fuel)}&self=${self}`,{cache:'no-store'}),d=await r.json();if(seq!==requestSeq)return;if(!r.ok||!d.ok)throw Error(d.error||`HTTP ${r.status}`);stations=d.stations||[];lastServerState=d;render();$('status').innerHTML=`${T('snapshot')} <b>${esc(d.price_date)}</b> · ${T('registry')} ${esc(d.registry_date)} · ${T('localHistory')}: ${d.history_days||0} ${T('snapshotDays')} · ${d.tracked_station_rows||0} ${T('tracked')}`+(d.warning?`<br/><span class="warn">${esc(d.warning)}</span>`:'');persistPrefs()}catch(e){if(seq!==requestSeq)return;stations=[];render();$('status').innerHTML=`<span class="warn">${esc(e.message)}</span>`}
+ const fuel=$('fuel').value,self=$('mode').value,radius=$('radius').value;
+ const key=`${current.lat.toFixed(7)}|${current.lon.toFixed(7)}|${radius}|${fuel}|${self}`;
+ if(stationRequestPromise&&stationRequestKey===key)return stationRequestPromise;
+ const seq=++requestSeq;$('status').textContent=T('loading');
+ stationRequestKey=key;
+ const task=(async()=>{
+  try{
+   const r=await fetch(`/api/stations?lat=${current.lat}&lon=${current.lon}&radius=${radius}&fuel=${encodeURIComponent(fuel)}&self=${self}`,{cache:'no-store'});
+   const d=await r.json();
+   if(seq!==requestSeq)return;
+   if(!r.ok||!d.ok)throw Error(d.error||`HTTP ${r.status}`);
+   stations=d.stations||[];lastServerState=d;render();
+   $('status').innerHTML=`${T('snapshot')} <b>${esc(d.price_date)}</b> · ${T('registry')} ${esc(d.registry_date)} · ${T('localHistory')}: ${d.history_days||0} ${T('snapshotDays')} · ${d.tracked_station_rows||0} ${T('tracked')}`+(d.warning?`<br/><span class="warn">${esc(d.warning)}</span>`:'');
+   persistPrefs();
+  }catch(e){
+   if(seq!==requestSeq)return;
+   stations=[];render();$('status').innerHTML=`<span class="warn">${esc(e.message)}</span>`;
+  }finally{
+   if(stationRequestKey===key){stationRequestKey=null;stationRequestPromise=null}
+  }
+ })();
+ stationRequestPromise=task;
+ return task
 }
 async function syncNow(){
  const b=$('sync');b.disabled=true;$('status').textContent=T('syncing');try{const r=await fetch('/api/sync',{cache:'no-store'}),d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||`HTTP ${r.status}`);$('status').textContent=`${T('syncDone')}: ${d.price_date} · ${T('localHistory')}: ${d.history_days||0} ${T('snapshotDays')}`;await loadStations()}catch(e){$('status').innerHTML=`<span class="warn">${T('syncFailed')}: ${esc(e.message)}</span>`}finally{b.disabled=false}

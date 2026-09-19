@@ -1,6 +1,6 @@
 # Italy live station-price map
 
-**Version 0.8.4**
+**Version 0.8.5**
 
 A local interactive map for Italian fuel-station prices using official MIMIT
 station and price data.
@@ -113,3 +113,11 @@ viewport.
 
 Clicking a marker or ranking row selects the same station in both views. The
 selected map marker is brought above nearby markers and receives a subtle halo.
+
+
+## 0.8.5 request-handling fix
+
+Browser reloads or rapidly superseded map requests can close an HTTP socket after
+the local server has already finished the station query. These disconnects are
+now ignored as normal client cancellation rather than logged as backend 502
+errors. Identical station requests are also deduplicated while in flight.
