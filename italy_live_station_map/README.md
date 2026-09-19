@@ -1,84 +1,150 @@
-# Live Italian fuel-station price map
+# Live Italian fuel-station price map — with station history
 
-This is a price-centric station map: no reviews, ratings, brand cards or other
-business metadata.
+This package is **standalone**. It does not need to be placed beside the earlier
+national fuel-price toolkit.
 
-## Run
+The earlier toolkit contains national statistical series. Station sparklines
+require a different key: MIMIT `idImpianto`, followed through daily station
+snapshots. For that reason this map maintains its own SQLite database:
 
-Requires Python 3.10+ and an internet connection.
+```text
+data/station_history.sqlite
+```
+
+## Start the map
 
 ```bash
 python serve_map.py
 ```
 
-Then open:
+Open:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-The local Python server proxies the Ministry's public station-price API. Keeping
-the API call server-side avoids browser CORS/file-origin problems.
+The map records the live station results that you view, so it begins building a
+rolling local history automatically.
 
-## UI
+## 30/90-day station history
 
-* Fuel selector: petrol, diesel, GPL, methane
-* Self-service / served selector
-* Radius: 1–10 km
-* Click anywhere on the map to search around that point
-* Optional `Use my location` asks the browser for location permission
-* `Refresh` requests current prices again
-* Stations are color-coded **relative to prices in the current result set**
-  (green = lower, red = higher)
-* Price labels appear on the map; station names and ratings are deliberately
-  omitted
-* Popups contain only price, fuel/mode, technical station ID and address
-* Summary shows station count, minimum, median and maximum
+Click a station and choose `30d` or `90d`.
 
-## Data source
+The sparkline:
+* uses only observations actually present in the local database;
+* does **not interpolate gaps**;
+* breaks the plotted line when dates are missing;
+* tells you how many requested days are available/missing.
 
-Primary endpoint used by the proxy:
+Initially the database can be sparse. There are two ways to fill it.
+
+### 1. Capture the official current 08:00 snapshot every day
+
+```bash
+python history_index.py capture-current
+```
+
+Optionally keep the raw CSV too:
+
+```bash
+python history_index.py capture-current --save-raw
+```
+
+This is the best way to build the ongoing current-quarter history. MIMIT
+publishes the daily file with prices in force at 08:00 on the day preceding
+publication.
+
+You can schedule this command once per day with cron / Task Scheduler.
+
+### 2. Index completed historical quarters
+
+For example:
+
+```bash
+python history_index.py download-and-index 2026 2
+```
+
+or separately:
+
+```bash
+python history_index.py download-quarter 2026 2
+python history_index.py index-archive cache/2026_2_tr.tar.gz
+```
+
+The quarterly files are large, so they are not bundled. `history_index.py`
+streams the CSV files from the `.tar.gz` and stores only:
+
+* station ID
+* observation date
+* fuel
+* self/served
+* price
+* communication timestamp
+* provenance
+
+in SQLite.
+
+Check coverage:
+
+```bash
+python history_index.py coverage
+```
+
+## Current-quarter limitation
+
+MIMIT's public historical archive is grouped by completed quarterly releases.
+At the time this package was prepared, the page exposed completed archives
+through Q2 2026. Therefore a fresh installation cannot magically reconstruct
+every station's July–September 2026 daily history from the quarterly archive.
+
+The package is explicit about that:
+* completed quarters can be indexed;
+* today's official snapshot can be captured;
+* future daily captures accumulate locally;
+* missing dates stay missing and are shown as gaps.
+
+## Data format
+
+MIMIT documents the daily price file as:
 
 ```text
-https://carburanti.mise.gov.it/ospzApi/search/zone
+idImpianto
+descCarburante
+prezzo
+isSelf
+dtComu
 ```
 
-Request shape:
+Line 1 contains the extraction date and line 2 contains the actual CSV header.
 
-```json
-{"points":[{"lat":"43.9303","lng":"10.9079"}],"radius":5}
-```
+Delimiter:
+* `;` through 9 February 2026
+* `|` from 10 February 2026
 
-The response contains station coordinates and `carburanti` price entries.
+`history_index.py` detects this from the extraction date.
 
-Fallback endpoint:
+## Live map features
 
-```text
-https://carburanti.mise.gov.it/OssPrezziSearch/ricerca/position
-```
+* Petrol / diesel / GPL / methane
+* Self-service / served
+* 1–10 km radius
+* Click map to recenter
+* Optional browser geolocation
+* Current price labels directly on the map
+* Green→red relative local-price coloring
+* Minimum / median / maximum summary
+* 30/90-day station sparkline
+* No ratings, reviews, brand cards or business-ranking data
 
-This older public API is documented by an OpenAPI sample from the Italian
-Digital Transformation Team.
+## Basemap
 
-## Map tiles
+Leaflet + OpenStreetMap. No Google Maps API key is required.
 
-The basemap uses Leaflet + OpenStreetMap tiles. This avoids needing a Google Maps
-API key and keeps the UI focused on the price layer. The underlying station
-price data remain MIMIT data.
-
-## Offline UI test
-
-If MIMIT is unreachable, you can test the interface with clearly synthetic
-points:
+## Demo
 
 ```bash
 python serve_map.py --demo
 ```
 
-Demo mode is **not** suitable for price analysis; it only validates the map UI.
-
-## Notes
-
-The exact availability and response behaviour of public ministry endpoints can
-change. If the API changes, `fetch_live()` in `serve_map.py` is the single place
-that needs updating.
+This uses synthetic stations to test the interface. Synthetic points are stored
+with source `synthetic_demo` and should not be used for analysis.
