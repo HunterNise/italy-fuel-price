@@ -151,3 +151,34 @@ whether a cheaper station is actually worth a detour.
 
 A later trip-planning version should use route distance/time and compare the
 fuel saved against the detour cost rather than ranking on price alone.
+
+
+## Freshness and fill-size controls
+
+The current version adds two ranking-quality controls:
+
+### Fill size
+
+Use the `Fill` slider (10–100 L) to change the savings calculation. A station
+that is 4 cents/litre below the local median corresponds to:
+
+* €0.80 saved on 20 L
+* €2.00 saved on 50 L
+* €3.20 saved on 80 L
+
+The selected fill size changes the side-panel savings immediately.
+
+### Price freshness
+
+MIMIT rows include a communication timestamp (`dtComu`). The map parses that
+timestamp and displays the approximate age of each station's current price.
+
+The `Freshness` selector can hide prices older than 1, 2, 3, 5 or 7 days.
+Default: 3 days.
+
+Freshness is shown in each ranked row and station popup. Observations older than
+3 days receive a visible `stale` badge when they are not filtered out.
+
+No missing date or missing freshness value is silently fabricated. If a
+communication timestamp cannot be parsed, that station is excluded by a finite
+freshness filter and remains visible only when `Freshness = all`.

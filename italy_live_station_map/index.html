@@ -9,7 +9,7 @@
 html,body,#map{height:100%;margin:0}
 body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden}
 #map{background:#e9ecef}
-.panel{position:absolute;z-index:1000;top:12px;left:12px;width:min(650px,calc(100vw - 390px));background:#fffffff5;border:1px solid #0002;border-radius:10px;box-shadow:0 2px 12px #0003;padding:10px 12px}
+.panel{position:absolute;z-index:1000;top:12px;left:12px;width:min(720px,calc(100vw - 390px));background:#fffffff5;border:1px solid #0002;border-radius:10px;box-shadow:0 2px 12px #0003;padding:10px 12px}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row+.row{margin-top:8px}
 label{font-size:12px;color:#333}
 select,button{font:inherit;font-size:13px;padding:5px 7px;border:1px solid #bbb;border-radius:6px;background:#fff}button{cursor:pointer}
@@ -59,6 +59,15 @@ select,button{font:inherit;font-size:13px;padding:5px 7px;border:1px solid #bbb;
 .rank-footer{font-size:10.5px;color:#666;border-top:1px solid #ddd;padding:7px 10px;line-height:1.3}
 #panelToggle{display:none}
 
+
+.fresh{font-size:10.5px;margin-top:2px}
+.fresh.good{color:#2f6f3e}
+.fresh.mid{color:#8a6500}
+.fresh.old{color:#9a3f32}
+.stale-badge{display:inline-block;border-radius:999px;padding:1px 5px;border:1px solid currentColor;margin-left:4px;font-size:9px}
+.fill-control{display:flex;align-items:center;gap:5px}
+.fill-control input{width:95px}
+
 @media(max-width:950px){
   .panel{width:min(570px,calc(100vw - 380px))}
 }
@@ -97,6 +106,20 @@ select,button{font:inherit;font-size:13px;padding:5px 7px;border:1px solid #bbb;
       <input id="radius" type="range" min="1" max="25" step="1" value="5"/>
       <span id="radiusValue">5 km</span>
     </label>
+    <label class="fill-control">Fill
+      <input id="fillLitres" type="range" min="10" max="100" step="5" value="50"/>
+      <span id="fillLitresValue">50 L</span>
+    </label>
+    <label>Freshness
+      <select id="maxAgeDays">
+        <option value="all">all</option>
+        <option value="1">≤1 day</option>
+        <option value="2">≤2 days</option>
+        <option value="3" selected>≤3 days</option>
+        <option value="5">≤5 days</option>
+        <option value="7">≤7 days</option>
+      </select>
+    </label>
     <button id="refresh">Refresh map</button>
     <button id="sync">Sync MIMIT files</button>
     <button id="locate">Use my location</button>
@@ -133,8 +156,8 @@ select,button{font:inherit;font-size:13px;padding:5px 7px;border:1px solid #bbb;
     </div>
   </div>
   <div id="rankList"></div>
-  <div class="rank-footer">
-    “Savings” is relative to the current area median for a 50 L fill. It does not include the cost of driving to the station.
+  <div class="rank-footer" id="rankFooter">
+    “Savings” is relative to the current area median for the selected fill size. It does not include the cost of driving to the station.
   </div>
 </div>
 
@@ -164,6 +187,54 @@ function quantile(a,p){if(!a.length)return NaN;const x=(a.length-1)*p,l=Math.flo
 function fmt(x){return Number.isFinite(x)?`€${x.toFixed(3)}`:'n/a'}
 function color(p,lo,hi){if(!Number.isFinite(p)||hi<=lo)return'hsl(55,70%,48%)';let t=Math.max(0,Math.min(1,(p-lo)/(hi-lo)));return`hsl(${120*(1-t)},70%,45%)`}
 function cents(x){return `${(x*100).toFixed(1)}¢/L`}
+
+function parseMimitDate(s){
+  if(!s)return null;
+  const t=String(s).trim();
+  // Handles common MIMIT forms such as dd/mm/yyyy HH:MM:SS and ISO-like dates.
+  let m=t.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(m){
+    const [,d,mo,y,h='0',mi='0',sec='0']=m;
+    return new Date(+y,+mo-1,+d,+h,+mi,+sec);
+  }
+  const d=new Date(t);
+  return Number.isNaN(+d)?null:d;
+}
+
+function stationAgeDays(s){
+  const d=parseMimitDate(s.updated);
+  if(!d){
+    // Fall back to snapshot date, which at least tells us the observation batch age.
+    const sd=parseMimitDate(s.observed_date);
+    if(!sd)return null;
+    return Math.max(0,(Date.now()-sd.getTime())/86400000);
+  }
+  return Math.max(0,(Date.now()-d.getTime())/86400000);
+}
+
+function ageText(days){
+  if(days==null||!Number.isFinite(days))return 'freshness unknown';
+  if(days<1)return '<1 day old';
+  if(days<2)return '1 day old';
+  return `${Math.floor(days)} days old`;
+}
+
+function ageClass(days){
+  if(days==null||!Number.isFinite(days))return 'mid';
+  if(days<=1)return 'good';
+  if(days<=3)return 'mid';
+  return 'old';
+}
+
+function activeStations(){
+  const raw=$('maxAgeDays').value;
+  if(raw==='all')return stations;
+  const max=+raw;
+  return stations.filter(s=>{
+    const age=stationAgeDays(s);
+    return age!=null && age<=max;
+  });
+}
 
 function setSearchGeometry(lat,lon){
   if(center)center.remove();
@@ -260,6 +331,7 @@ function popup(s){
       ${esc(s.address)}<br/>
       snapshot: ${esc(s.observed_date)}
       ${s.updated?`<br/>communicated: ${esc(s.updated)}`:''}
+      <br/><span class="fresh ${ageClass(stationAgeDays(s))}">freshness: ${ageText(stationAgeDays(s))}</span>
     </div>
     <div class="history-head">
       <b>History</b>
@@ -282,20 +354,24 @@ function renderRanking(values,median){
   const mode=$('rankSort').value;
   const limitRaw=$('rankLimit').value;
 
-  const enriched=stations.map(s=>({
+  const fillLitres=+$('fillLitres').value;
+  const eligible=activeStations();
+  const enriched=eligible.map(s=>({
     ...s,
     delta:s.price-median,
-    saving50:(median-s.price)*50
+    savingFill:(median-s.price)*fillLitres,
+    ageDays:stationAgeDays(s)
   }));
 
   enriched.sort((a,b)=>{
     if(mode==='distance') return a.distance_km-b.distance_km || a.price-b.price;
-    if(mode==='saving') return b.saving50-a.saving50 || a.distance_km-b.distance_km;
+    if(mode==='saving') return b.savingFill-a.savingFill || a.distance_km-b.distance_km;
     return a.price-b.price || a.distance_km-b.distance_km;
   });
 
   const shown=limitRaw==='all'?enriched:enriched.slice(0,+limitRaw);
   $('rankCount').textContent=`${enriched.length} stations`;
+  $('rankFooter').textContent=`Savings are relative to the current area median for a ${fillLitres} L fill. Driving/detour cost is not included.`;
 
   if(!shown.length){
     $('rankList').innerHTML='<div class="rank-empty">No stations in the current selection.</div>';
@@ -303,8 +379,8 @@ function renderRanking(values,median){
   }
 
   $('rankList').innerHTML=shown.map((s,i)=>{
-    const saving=s.saving50>0.005?`save ${fmt(s.saving50)} / 50 L`:
-                 s.saving50<-0.005?`${fmt(Math.abs(s.saving50))} above median / 50 L`:
+    const saving=s.savingFill>0.005?`save ${fmt(s.savingFill)} / ${fillLitres} L`:
+                 s.savingFill<-0.005?`${fmt(Math.abs(s.savingFill))} above median / ${fillLitres} L`:
                  'at local median';
     const delta=Math.abs(s.delta)<.0005?'median price':
       s.delta<0?`${cents(Math.abs(s.delta))} below median`:`${cents(s.delta)} above median`;
@@ -315,6 +391,7 @@ function renderRanking(values,median){
         <div class="rank-price">${fmt(s.price)}</div>
         <div class="rank-detail">${esc(s.address || `Station ${s.id}`)}</div>
         <div class="rank-delta">${delta}</div>
+        <div class="fresh ${ageClass(s.ageDays)}">${ageText(s.ageDays)}${s.ageDays!=null&&s.ageDays>3?'<span class="stale-badge">stale</span>':''}</div>
       </div>
       <div class="rank-right">
         <div class="rank-distance">${s.distance_km.toFixed(1)} km</div>
@@ -332,10 +409,11 @@ function render(){
   layer.clearLayers();
   markerById.clear();
 
-  const values=stations.map(s=>s.price).filter(Number.isFinite).sort((a,b)=>a-b);
+  const visibleStations=activeStations();
+  const values=visibleStations.map(s=>s.price).filter(Number.isFinite).sort((a,b)=>a-b);
   const lo=quantile(values,.05),hi=quantile(values,.95),med=quantile(values,.5);
 
-  stations.forEach(s=>{
+  visibleStations.forEach(s=>{
     const c=L.circleMarker([s.lat,s.lon],{
       radius:9,color:'#222',weight:.7,
       fillColor:color(s.price,lo,hi),fillOpacity:.92
@@ -365,8 +443,10 @@ function render(){
   $('lmed').textContent=values.length?fmt(med):'median';
   $('lmax').textContent=values.length?fmt(values.at(-1)):'high';
 
+  const hiddenByFreshness=stations.length-visibleStations.length;
   $('stats').innerHTML=values.length
     ? `<span class="stat">${values.length} stations</span>
+       ${hiddenByFreshness?`<span class="stat">${hiddenByFreshness} hidden as stale</span>`:''}
        <span class="stat">min ${fmt(values[0])}</span>
        <span class="stat">median ${fmt(med)}</span>
        <span class="stat">max ${fmt(values.at(-1))}</span>`
@@ -437,6 +517,11 @@ $('refresh').addEventListener('click',loadStations);
 $('sync').addEventListener('click',syncNow);
 $('rankSort').addEventListener('change',render);
 $('rankLimit').addEventListener('change',render);
+$('fillLitres').addEventListener('input',e=>{
+  $('fillLitresValue').textContent=`${e.target.value} L`;
+  render();
+});
+$('maxAgeDays').addEventListener('change',render);
 
 $('locate').addEventListener('click',()=>{
   if(!navigator.geolocation){
