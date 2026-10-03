@@ -55,8 +55,8 @@ class Handler(SimpleHTTPRequestHandler):
 
         if url.path == "/api/stations":
             try:
-                lat = float(query.get("lat", ["43.9303"])[0])
-                lon = float(query.get("lon", ["10.9079"])[0])
+                lat = float(query.get("lat", ["41.9028"])[0])
+                lon = float(query.get("lon", ["12.4964"])[0])
                 radius = max(1.0, min(25.0, float(query.get("radius", ["5"])[0])))
                 fuel = query.get("fuel", ["Benzina"])[0]
                 want_self = query.get("self", ["1"])[0] == "1"

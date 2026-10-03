@@ -1,4 +1,4 @@
-const START={lat:43.9303,lon:10.9079};
+const START={lat:41.9028,lon:12.4964};
 const PALETTE=['#0072B2','#56B4E9','#F0E442','#E69F00','#D55E00'];
 const PREF_KEY='fuelMapPrefsV4';
 const LEGACY_PREF_KEYS=['fuelMapPrefsV3','fuelMapPrefsV2','fuelMapPrefsV1'];
@@ -64,25 +64,76 @@ const quantile=(a,p)=>{if(!a.length)return NaN;const x=(a.length-1)*p,l=Math.flo
 const fmt=x=>Number.isFinite(x)?`€${x.toFixed(3)}`:'n/a';
 
 function loadPrefs(){
- const defaults={fuel:'Benzina',mode:'1',radius:'5',fillLitres:'50',maxAgeDays:'3',rankSort:'price',rankLimit:'all',filterPriceEnabled:false,filterDistanceEnabled:false,filterMaxPrice:null,filterMaxDistance:null,lat:START.lat,lon:START.lon,zoom:13,locationLabel:'Pistoia',controlsCollapsed:false,sidebarCollapsed:false};
+ const defaults={
+  fuel:'Benzina',
+  mode:'1',
+  radius:'5',
+  fillLitres:'50',
+  maxAgeDays:'3',
+  rankSort:'price',
+  rankLimit:'all',
+  filterPriceEnabled:false,
+  filterDistanceEnabled:false,
+  filterMaxPrice:null,
+  filterMaxDistance:null,
+  lat:START.lat,
+  lon:START.lon,
+  zoom:13,
+  locationLabel:'Roma',
+  controlsCollapsed:false,
+  sidebarCollapsed:false
+ };
+
  try{
   const currentRaw=localStorage.getItem(PREF_KEY);
-  if(currentRaw)return {...defaults,...JSON.parse(currentRaw)};
+
+  if(currentRaw){
+   const current={...defaults,...JSON.parse(currentRaw)};
+
+   // V4 is authoritative; old migration sources are no longer needed.
+   for(const key of LEGACY_PREF_KEYS){
+    localStorage.removeItem(key);
+   }
+
+   return current;
+  }
+
   for(const key of LEGACY_PREF_KEYS){
    const raw=localStorage.getItem(key);
    if(!raw)continue;
-   const legacy=JSON.parse(raw),migrated={...defaults,...legacy};
-   if(legacy.rankLimit==='maxPrice'){migrated.rankLimit='all';migrated.filterPriceEnabled=true;migrated.filterMaxPrice=legacy.showMaxPrice??null}
-   if(legacy.rankLimit==='maxDistance'){migrated.rankLimit='all';migrated.filterDistanceEnabled=true;migrated.filterMaxDistance=legacy.showMaxDistance??null}
-   return migrated
+
+   const legacy=JSON.parse(raw);
+   const migrated={...defaults,...legacy};
+
+   if(legacy.rankLimit==='maxPrice'){
+    migrated.rankLimit='all';
+    migrated.filterPriceEnabled=true;
+    migrated.filterMaxPrice=legacy.showMaxPrice??null;
+   }
+
+   if(legacy.rankLimit==='maxDistance'){
+    migrated.rankLimit='all';
+    migrated.filterDistanceEnabled=true;
+    migrated.filterMaxDistance=legacy.showMaxDistance??null;
+   }
+
+   // Complete the migration instead of leaving stale legacy state around.
+   localStorage.setItem(PREF_KEY,JSON.stringify(migrated));
+
+   for(const oldKey of LEGACY_PREF_KEYS){
+    localStorage.removeItem(oldKey);
+   }
+
+   return migrated;
   }
  }catch{}
- return defaults
+
+ return defaults;
 }
 const prefs=loadPrefs();
 let lang=localStorage.getItem('fuelMapLang')||(navigator.language&&navigator.language.toLowerCase().startsWith('it')?'it':'en');
 let current={lat:Number(prefs.lat)||START.lat,lon:Number(prefs.lon)||START.lon};
-let currentLocationLabel=prefs.locationLabel||'Pistoia';
+let currentLocationLabel=prefs.locationLabel||'Roma';
 let center=null,radiusCircle=null,stations=[],shownStations=[],requestSeq=0,markerById=new Map(),lastServerState={},selectedStationId=null,selectionHalo=null,stationRequestKey=null,stationRequestPromise=null,lastHiddenStale=0;
 let filterPriceEnabled=!!prefs.filterPriceEnabled,filterDistanceEnabled=!!prefs.filterDistanceEnabled;
 let filterMaxPrice=Number.isFinite(Number(prefs.filterMaxPrice))?Number(prefs.filterMaxPrice):null;

@@ -9,7 +9,7 @@ inside one server script.
 ## Layout
 
 ```text
-italy_live_station_map/
+station_map/
 ├── index.html                # HTML shell only
 ├── static/
 │   ├── styles.css            # UI/layout

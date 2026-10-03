@@ -13,6 +13,17 @@ formal semantic-version tags. Semver becomes the canonical version scheme from
 ### Planned
 - Evaluate route-aware fuel-stop planning without coupling it to the station-map core.
 
+## [0.8.11] - 2026-10-03
+
+### Changed
+- Use Rome as the default map location when no browser preference exists.
+- Preserve the last visited location in browser `localStorage`.
+- Complete migration from legacy preference keys and remove them afterward.
+
+### Fixed
+- Clearing the current preference state no longer restores an older location from a legacy preference key.
+
+
 ## [0.8.10] - 2026-09-19
 
 ### Changed

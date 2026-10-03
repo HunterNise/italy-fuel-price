@@ -1,6 +1,6 @@
 # Italy live station-price map
 
-**Version 0.8.10**
+**Version 0.8.11**
 
 A local interactive map for Italian fuel-station prices using official MIMIT
 station and price data.
@@ -10,13 +10,13 @@ station and price data.
 From any directory:
 
 ```bash
-./italy_live_station_map/run.sh
+./station_map/run.sh
 ```
 
 or:
 
 ```bash
-python3 italy_live_station_map/serve_map.py
+python3 station_map/serve_map.py
 ```
 
 Then open `http://127.0.0.1:8000`.
@@ -24,7 +24,7 @@ Then open `http://127.0.0.1:8000`.
 Check the installed version:
 
 ```bash
-python3 italy_live_station_map/serve_map.py --version
+python3 station_map/serve_map.py --version
 ```
 
 ## Project structure
@@ -54,13 +54,13 @@ No missing history is silently interpolated.
 ## Current sync
 
 ```bash
-python3 italy_live_station_map/sync_current.py
+python3 station_map/sync_current.py
 ```
 
 The server can also refresh periodically:
 
 ```bash
-python3 italy_live_station_map/serve_map.py --auto-sync-hours 6
+python3 station_map/serve_map.py --auto-sync-hours 6
 ```
 
 Repeated syncs of the same official snapshot date do not create duplicate history days.
@@ -70,13 +70,13 @@ Repeated syncs of the same official snapshot date do not create duplicate histor
 Completed quarterly MIMIT archives remain optional:
 
 ```bash
-python3 italy_live_station_map/history_index.py download-and-index 2026 2
+python3 station_map/history_index.py download-and-index 2026 2
 ```
 
 Inspect stored history:
 
 ```bash
-python3 italy_live_station_map/history_index.py coverage
+python3 station_map/history_index.py coverage
 ```
 
 ## Versioning
