@@ -6,6 +6,15 @@
 __pycache__/
 *.py[cod]
 .venv/
+venv/
+
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
 
 # Local configuration
 .env
@@ -15,6 +24,9 @@ __pycache__/
 # Editors
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
 # OS metadata
 .DS_Store
