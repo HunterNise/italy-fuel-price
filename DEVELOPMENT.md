@@ -79,6 +79,26 @@ instead of copying the whole `station_map/` tree.
 
 The assembled site is a build artifact and is not committed.
 
+## Check static/local station parity
+
+For a cached real MIMIT snapshot and its generated public data, compare local
+current-snapshot semantics against the generated static cells:
+
+```bash
+python3 tools/check_static_parity.py \
+  --registry-file /path/to/anagrafica_impianti_attivi.csv \
+  --price-file /path/to/prezzo_alle_8.csv \
+  --data-dir /tmp/italy-fuel-web-data
+```
+
+The checker runs representative national city probes plus automatically derived
+probes on populated 0.5° grid boundaries. It compares full station-result tuples
+including station ID, coordinates, address, road type, price, communication
+timestamp, observed date, fuel/service mode, and rounded distance.
+
+The network-independent unit suite also contains synthetic cross-cell parity
+cases, so boundary regressions fail normal repository checks.
+
 ## Analysis toolkit
 
 Create an environment when the analysis dependencies are needed:

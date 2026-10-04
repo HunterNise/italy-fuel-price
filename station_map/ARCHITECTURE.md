@@ -99,8 +99,10 @@ Repository-level static-data generation is implemented in:
 ```text
 tools/build_web_data.py          validated static-data builder
 tools/build_static_site.py       allowlisted Pages-site assembler
+tools/check_static_parity.py     static/local current-query parity checker
 tests/test_build_web_data.py     builder/grid/history tests
 tests/test_build_static_site.py  site allowlist/safety tests
+tests/test_static_parity.py      synthetic cross-cell parity tests
 .github/workflows/check.yml      network-independent repository checks
 ```
 
@@ -134,6 +136,12 @@ checks that the browser asset cache-busting version matches
 SQLite databases, raw CSV/ZIP inputs, local cache/data directories, and rolling
 history state are therefore outside the Pages artifact by construction rather
 than by a broad copy followed by exclusions.
+
+`tools/check_static_parity.py` provides a real-snapshot integration check between
+the local current-query semantics and generated static cells. It uses
+representative national probes plus populated 0.5° cell-edge probes and compares
+the complete normalized result tuples. Synthetic cross-cell cases run in the
+normal unit suite.
 
 The GitHub Pages deployment workflow is not yet implemented. Planned work
 belongs in [`ROADMAP.md`](../ROADMAP.md).

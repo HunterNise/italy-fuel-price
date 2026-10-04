@@ -7,8 +7,6 @@ separate from changelogs and current-state architecture documents.
 
 Near-term work:
 
-- Add focused static-vs-local parity checks for representative station queries
-  and grid-boundary cases.
 - Add the Pages deployment workflow with validation, manual dispatch, rolling
   history-state persistence, and scheduled refreshes.
 - Measure actual morning source publication timing and keep a fallback schedule
