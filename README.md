@@ -55,3 +55,7 @@ Examples and data notes are documented in
 The station map currently runs as a local Python application.
 A static web deployment using GitHub Actions and GitHub Pages is planned, but is
 not yet part of the repository.
+
+## Data sources and licensing
+
+Official source data and third-party material have their own provenance and reuse terms. See [`DATA_SOURCES_AND_LICENSES.md`](DATA_SOURCES_AND_LICENSES.md) for MIMIT/MASE source notes, OpenStreetMap attribution, Leaflet licensing, and the boundary between public generated data and local runtime state.
