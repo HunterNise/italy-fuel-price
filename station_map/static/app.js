@@ -2,10 +2,12 @@ const START={lat:41.9028,lon:12.4964};
 const PALETTE=['#0072B2','#56B4E9','#F0E442','#E69F00','#D55E00'];
 const PREF_KEY='fuelMapPrefsV4';
 const LEGACY_PREF_KEYS=['fuelMapPrefsV3','fuelMapPrefsV2','fuelMapPrefsV1'];
+const DATA=window.FuelMapData;
+if(!DATA)throw Error('FuelMap data provider is not loaded.');
 
 const I18N={
  en:{
-  title:'MIMIT station prices',subtitle:'official daily data, joined locally',searchPlaceholder:'Search a place in Italy…',
+  title:'MIMIT station prices',subtitle:'official daily data, joined locally',subtitleStatic:'official daily data, static public snapshot',searchPlaceholder:'Search a place in Italy…',
   fuel:'Fuel',petrol:'Petrol',diesel:'Diesel',methane:'Methane',mode:'Mode',self:'Self-service',served:'Served',
   radius:'Radius',fitRadius:'Fit radius',fill:'Fill',freshness:'Freshness',all:'all',
   refresh:'Refresh map',syncCurrent:'Sync current snapshot',myLocation:'Use my location',currentLocation:'Current location',
@@ -16,22 +18,22 @@ const I18N={
   guideIntroTitle:'Using the map',guideIntro:'Search for a place, click the map, or use your browser location to choose the centre point. The dashed circle is the active search radius.',
   guideDataTitle:'Prices and ranking',guideData:'Choose fuel, service mode and freshness. Use Filters for maximum price/distance constraints, then sort the remaining stations and optionally limit the displayed result with Show. Map markers, ranking rows and the histogram always use the same final station subset.',
   guideReadTitle:'Reading and selecting stations',guideRead:'Click a map marker or ranking row to select the same station in both views. The selected station is brought above nearby markers with a subtle halo. Use the ⛶ map button to centre and maximize the active search radius. Price labels appear automatically at closer zoom or when only a small number of stations is shown.',
-  historyTitle:'History',historyHelp:'The 7/30/90-day views read only dates already stored in the local SQLite database. Sync adds the newest official snapshot only. The current nationwide snapshot is not retained day-by-day; history is kept only for stations in areas you view, so disk use stays small.',
+  historyTitle:'History',historyHelp:'The 7/30/90-day views read only dates already stored in the local SQLite database. Sync adds the newest official snapshot only. The current nationwide snapshot is not retained day-by-day; history is kept only for stations in areas you view, so disk use stays small.',historyHelpStatic:'The public map exposes the generated rolling 7-day history. Missing source days remain missing and are never interpolated.',
   stations:'stations',hiddenStale:'hidden as stale',min:'min',median:'median',max:'max',snapshot:'snapshot',registry:'registry',
-  localHistory:'local history',snapshotDays:'snapshot days',tracked:'tracked stations',syncing:'Downloading the official current MIMIT snapshot…',
+  localHistory:'local history',publicHistory:'public history',snapshotDays:'snapshot days',tracked:'tracked stations',syncing:'Downloading the official current MIMIT snapshot…',
   syncDone:'Current snapshot synchronized',searchNoResults:'No places found.',searching:'Searching…',searchError:'Location search failed',
-  loading:'Loading locally joined MIMIT snapshot…',syncFailed:'Sync failed',freshnessUnknown:'freshness unknown',less1:'<1 day old',
+  loading:'Loading locally joined MIMIT snapshot…',loadingStatic:'Loading generated public station data…',syncFailed:'Sync failed',freshnessUnknown:'freshness unknown',less1:'<1 day old',
   oneDay:'1 day old',daysOld:'{n} days old',stale:'stale',belowMedian:'{c}¢/L below median',aboveMedian:'{c}¢/L above median',
   medianPrice:'median price',cheaperThan:'cheaper than {p}% of visible stations',lowest:'lowest price in current set',highest:'highest price in current set',
   saveFill:'save {v} / {l} L',aboveFill:'{v} above median / {l} L',atMedian:'at local median',
   savingFooter:'Savings use the median of all {n} freshness-filtered stations for a {l} L fill. Driving/detour cost is not included.',
   spread:'spread {c}¢/L',histShown:'{shown} shown · {total} filtered',shownOf:'{shown}/{total} shown',
   historyFast:'History',daysAvailable:'{a}/{r} days available · {m} missing · no interpolation',
-  localCoverage:'local station coverage: {n} snapshot days ({a} → {b})',noHistory:'No local history indexed for this period.',
+  localCoverage:'local station coverage: {n} snapshot days ({a} → {b})',publicCoverage:'public history coverage: {n} snapshot days ({a} → {b})',noHistory:'No history available for this period.',
   station:'Station ID',communicated:'communicated',distanceKm:'{n} km',locationDenied:'Location not used',browserGeoUnavailable:'Browser geolocation unavailable.',staleCount:'{n} stale hidden'
  },
  it:{
-  title:'Prezzi carburanti MIMIT',subtitle:'dati ufficiali giornalieri, uniti in locale',searchPlaceholder:'Cerca una località in Italia…',
+  title:'Prezzi carburanti MIMIT',subtitle:'dati ufficiali giornalieri, uniti in locale',subtitleStatic:'dati ufficiali giornalieri, snapshot pubblico statico',searchPlaceholder:'Cerca una località in Italia…',
   fuel:'Carburante',petrol:'Benzina',diesel:'Gasolio',methane:'Metano',mode:'Servizio',self:'Self-service',served:'Servito',
   radius:'Raggio',fitRadius:'Inquadra raggio',fill:'Rifornimento',freshness:'Freschezza',all:'tutti',
   refresh:'Aggiorna mappa',syncCurrent:'Sincronizza snapshot attuale',myLocation:'La mia posizione',currentLocation:'Posizione attuale',
@@ -42,18 +44,18 @@ const I18N={
   guideIntroTitle:'Come usare la mappa',guideIntro:'Cerca una località, clicca sulla mappa oppure usa la posizione del browser per scegliere il punto centrale. Il cerchio tratteggiato è il raggio di ricerca attivo.',
   guideDataTitle:'Prezzi e classifica',guideData:'Scegli carburante, modalità di servizio e freschezza. Usa Filtri per applicare limiti massimi di prezzo e/o distanza, poi ordina le stazioni rimanenti e limita eventualmente il risultato con Mostra. Marker, righe e istogramma usano sempre lo stesso sottoinsieme finale.',
   guideReadTitle:'Lettura e selezione delle stazioni',guideRead:'Clicca un marker o una riga della classifica per selezionare lo stesso impianto in entrambe le viste. La stazione selezionata viene portata sopra i marker vicini con un alone discreto. Usa il pulsante ⛶ sulla mappa per centrare e massimizzare il raggio attivo. Le etichette prezzo compaiono automaticamente a zoom ravvicinato o quando sono mostrate poche stazioni.',
-  historyTitle:'Storico',historyHelp:'Le viste 7/30/90 giorni leggono solo le date già presenti nel database SQLite locale. La sincronizzazione aggiunge soltanto lo snapshot ufficiale più recente. Lo snapshot nazionale corrente non viene conservato giorno per giorno: lo storico viene mantenuto solo per gli impianti nelle aree che consulti, così lo spazio occupato resta ridotto.',
+  historyTitle:'Storico',historyHelp:'Le viste 7/30/90 giorni leggono solo le date già presenti nel database SQLite locale. La sincronizzazione aggiunge soltanto lo snapshot ufficiale più recente. Lo snapshot nazionale corrente non viene conservato giorno per giorno: lo storico viene mantenuto solo per gli impianti nelle aree che consulti, così lo spazio occupato resta ridotto.',historyHelpStatic:'La mappa pubblica espone lo storico mobile generato di 7 giorni. I giorni mancanti nella fonte restano mancanti e non vengono mai interpolati.',
   stations:'stazioni',hiddenStale:'nascoste perché vecchie',min:'min',median:'mediana',max:'max',snapshot:'snapshot',registry:'anagrafica',
-  localHistory:'storico locale',snapshotDays:'giorni snapshot',tracked:'impianti tracciati',syncing:'Scarico lo snapshot MIMIT attuale…',
+  localHistory:'storico locale',publicHistory:'storico pubblico',snapshotDays:'giorni snapshot',tracked:'impianti tracciati',syncing:'Scarico lo snapshot MIMIT attuale…',
   syncDone:'Snapshot attuale sincronizzato',searchNoResults:'Nessuna località trovata.',searching:'Ricerca…',searchError:'Ricerca località fallita',
-  loading:'Carico lo snapshot MIMIT unito in locale…',syncFailed:'Sincronizzazione fallita',freshnessUnknown:'freschezza sconosciuta',less1:'meno di 1 giorno',
+  loading:'Carico lo snapshot MIMIT unito in locale…',loadingStatic:'Carico i dati pubblici generati degli impianti…',syncFailed:'Sincronizzazione fallita',freshnessUnknown:'freschezza sconosciuta',less1:'meno di 1 giorno',
   oneDay:'1 giorno fa',daysOld:'{n} giorni fa',stale:'vecchio',belowMedian:'{c}¢/L sotto la mediana',aboveMedian:'{c}¢/L sopra la mediana',
   medianPrice:'prezzo mediano',cheaperThan:'più economico del {p}% delle stazioni visibili',lowest:'prezzo più basso del gruppo',highest:'prezzo più alto del gruppo',
   saveFill:'risparmi {v} / {l} L',aboveFill:'{v} sopra mediana / {l} L',atMedian:'alla mediana locale',
   savingFooter:'Il risparmio usa la mediana di tutte le {n} stazioni filtrate per freschezza, per un rifornimento di {l} L. Il costo della deviazione non è incluso.',
   spread:'ampiezza {c}¢/L',histShown:'{shown} mostrate · {total} filtrate',shownOf:'{shown}/{total} mostrate',
   historyFast:'Storico',daysAvailable:'{a}/{r} giorni disponibili · {m} mancanti · nessuna interpolazione',
-  localCoverage:'copertura locale stazione: {n} giorni snapshot ({a} → {b})',noHistory:'Nessuno storico locale disponibile per questo periodo.',
+  localCoverage:'copertura locale stazione: {n} giorni snapshot ({a} → {b})',publicCoverage:'copertura storico pubblico: {n} giorni snapshot ({a} → {b})',noHistory:'Nessuno storico disponibile per questo periodo.',
   station:'ID impianto',communicated:'comunicato',distanceKm:'{n} km',locationDenied:'Posizione non usata',browserGeoUnavailable:'Geolocalizzazione browser non disponibile.',staleCount:'{n} vecchie nascoste'
  }
 };
@@ -144,6 +146,10 @@ function T(key,vars={}){
  for(const [k,v] of Object.entries(vars))s=s.replaceAll(`{${k}}`,String(v));
  return s
 }
+function providerTextKey(key){
+ const candidate=`${key}Static`;
+ return DATA.mode==='static'&&((I18N[lang]&&I18N[lang][candidate])||I18N.en[candidate])?candidate:key
+}
 function flagSVG(code){
  if(code==='it')return`<svg class="flag-svg" viewBox="0 0 30 20" aria-hidden="true"><rect width="10" height="20" fill="#009246"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ce2b37"/></svg>`;
  return`<svg class="flag-svg" viewBox="0 0 60 40" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0L60 40M60 0L0 40" stroke="#fff" stroke-width="9"/><path d="M0 0L60 40M60 0L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0V40M0 20H60" stroke="#fff" stroke-width="13"/><path d="M30 0V40M0 20H60" stroke="#C8102E" stroke-width="7"/></svg>`
@@ -183,7 +189,7 @@ function applyPrefs(){
 }
 function applyLanguage(){
  document.documentElement.lang=lang;
- document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=T(el.dataset.i18n));
+ document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=T(providerTextKey(el.dataset.i18n)));
  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>el.placeholder=T(el.dataset.i18nPlaceholder));
  $('langToggle').innerHTML=flagSVG(lang)+`<span>${lang.toUpperCase()}</span>`;
  if($('fitRadiusNav')){$('fitRadiusNav').title=T('fitRadius');$('fitRadiusNav').setAttribute('aria-label',T('fitRadius'))}
@@ -283,11 +289,13 @@ function spark(points){
 }
 async function loadHistory(box,id,fuel,self,days){
  box.innerHTML='<div class="spark-empty">…</div>';
- try{const r=await fetch(`/api/history?id=${encodeURIComponent(id)}&fuel=${encodeURIComponent(fuel)}&self=${self?1:0}&days=${days}`,{cache:'no-store'}),d=await r.json();if(!d.ok)throw Error(d.error||'history error');box.innerHTML=spark(d.points)+`<div class="spark-meta">${T('daysAvailable',{a:d.observed_days,r:d.requested_days,m:d.missing_days})}</div>`+(d.available_total_days?`<div class="spark-meta">${T('localCoverage',{n:d.available_total_days,a:d.available_start,b:d.available_end})}</div>`:'')}catch(e){box.innerHTML=`<div class="spark-empty">${esc(e.message)}</div>`}
+ try{const d=await DATA.getHistory({id,fuel,self,days});const coverageKey=DATA.mode==='static'?'publicCoverage':'localCoverage';box.innerHTML=spark(d.points)+`<div class="spark-meta">${T('daysAvailable',{a:d.observed_days,r:d.requested_days,m:d.missing_days})}</div>`+(d.available_total_days?`<div class="spark-meta">${T(coverageKey,{n:d.available_total_days,a:d.available_start,b:d.available_end})}</div>`:'')}catch(e){box.innerHTML=`<div class="spark-empty">${esc(e.message)}</div>`}
 }
 function popupHtml(s){
  const key=`hist-${String(s.id).replace(/[^a-zA-Z0-9_-]/g,'')}-${Math.random().toString(36).slice(2,6)}`;
- return`<div class="popup-price">${fmt(s.price)}</div><div><b>${esc(s.fuel)}</b> · ${s.isSelf?T('self'):T('served')} · ${T('distanceKm',{n:s.distance_km.toFixed(1)})}</div><div class="popup-meta">${T('station')} ${esc(s.id)}<br/>${esc(s.address)}<br/>${T('snapshot')}: ${esc(s.observed_date)}${s.updated?`<br/>${T('communicated')}: ${esc(s.updated)}`:''}<br/><span class="fresh ${ageClass(stationAgeDays(s))}">${ageText(stationAgeDays(s))}</span></div><div class="history-head"><b>${T('historyFast')}</b><span class="history-btns"><button data-days="7">7d</button><button data-days="30">30d</button><button data-days="90">90d</button></span></div><div id="${key}" data-history-id="${esc(s.id)}" data-fuel="${esc(s.fuel)}" data-self="${s.isSelf?1:0}"></div>`
+ const historyDays=DATA.capabilities.historyDays||[];
+ const historyHtml=DATA.capabilities.history&&historyDays.length?`<div class="history-head"><b>${T('historyFast')}</b><span class="history-btns">${historyDays.map(days=>`<button data-days="${days}">${days}d</button>`).join('')}</span></div><div id="${key}" data-history-id="${esc(s.id)}" data-fuel="${esc(s.fuel)}" data-self="${s.isSelf?1:0}"></div>`:'';
+ return`<div class="popup-price">${fmt(s.price)}</div><div><b>${esc(s.fuel)}</b> · ${s.isSelf?T('self'):T('served')} · ${T('distanceKm',{n:s.distance_km.toFixed(1)})}</div><div class="popup-meta">${T('station')} ${esc(s.id)}<br/>${esc(s.address)}<br/>${T('snapshot')}: ${esc(s.observed_date)}${s.updated?`<br/>${T('communicated')}: ${esc(s.updated)}`:''}<br/><span class="fresh ${ageClass(stationAgeDays(s))}">${ageText(stationAgeDays(s))}</span></div>${historyHtml}`
 }
 function openStation(id){selectStation(id,{pan:true,openPopup:true,scrollRank:true})}
 
@@ -375,7 +383,8 @@ function render(){
    const el=e.popup.getElement();if(!el)return;
    const box=el.querySelector('[data-history-id]');if(!box)return;
    const id=box.dataset.historyId,f=box.dataset.fuel,self=box.dataset.self==='1';
-   loadHistory(box,id,f,self,7);
+   const defaultDays=(DATA.capabilities.historyDays||[7])[0]||7;
+   loadHistory(box,id,f,self,defaultDays);
    el.querySelectorAll('[data-days]').forEach(b=>b.addEventListener('click',()=>loadHistory(box,id,f,self,+b.dataset.days)))
   })
  });
@@ -410,16 +419,16 @@ async function loadStations(){
  const fuel=$('fuel').value,self=$('mode').value,radius=$('radius').value;
  const key=`${current.lat.toFixed(7)}|${current.lon.toFixed(7)}|${radius}|${fuel}|${self}`;
  if(stationRequestPromise&&stationRequestKey===key)return stationRequestPromise;
- const seq=++requestSeq;$('status').textContent=T('loading');
+ const seq=++requestSeq;$('status').textContent=T(DATA.mode==='static'?'loadingStatic':'loading');
  stationRequestKey=key;
  const task=(async()=>{
   try{
-   const r=await fetch(`/api/stations?lat=${current.lat}&lon=${current.lon}&radius=${radius}&fuel=${encodeURIComponent(fuel)}&self=${self}`,{cache:'no-store'});
-   const d=await r.json();
+   const d=await DATA.getStations({lat:current.lat,lon:current.lon,radius,fuel,self});
    if(seq!==requestSeq)return;
-   if(!r.ok||!d.ok)throw Error(d.error||`HTTP ${r.status}`);
    stations=d.stations||[];lastServerState=d;render();
-   $('status').innerHTML=`${T('snapshot')} <b>${esc(d.price_date)}</b> · ${T('registry')} ${esc(d.registry_date)} · ${T('localHistory')}: ${d.history_days||0} ${T('snapshotDays')} · ${d.tracked_station_rows||0} ${T('tracked')}`+(d.warning?`<br/><span class="warn">${esc(d.warning)}</span>`:'');
+   $('status').innerHTML=DATA.mode==='static'
+    ?`${T('snapshot')} <b>${esc(d.price_date)}</b> · ${T('registry')} ${esc(d.registry_date)} · ${T('publicHistory')}: ${d.history_days||0} ${T('snapshotDays')}`
+    :`${T('snapshot')} <b>${esc(d.price_date)}</b> · ${T('registry')} ${esc(d.registry_date)} · ${T('localHistory')}: ${d.history_days||0} ${T('snapshotDays')} · ${d.tracked_station_rows||0} ${T('tracked')}`+(d.warning?`<br/><span class="warn">${esc(d.warning)}</span>`:'');
    persistPrefs();
   }catch(e){
    if(seq!==requestSeq)return;
@@ -432,23 +441,29 @@ async function loadStations(){
  return task
 }
 async function syncNow(){
- const b=$('sync');b.disabled=true;$('status').textContent=T('syncing');try{const r=await fetch('/api/sync',{cache:'no-store'}),d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||`HTTP ${r.status}`);$('status').textContent=`${T('syncDone')}: ${d.price_date} · ${T('localHistory')}: ${d.history_days||0} ${T('snapshotDays')}`;await loadStations()}catch(e){$('status').innerHTML=`<span class="warn">${T('syncFailed')}: ${esc(e.message)}</span>`}finally{b.disabled=false}
+ if(!DATA.capabilities.sync)return;
+ const b=$('sync');b.disabled=true;$('status').textContent=T('syncing');try{const d=await DATA.syncCurrent();$('status').textContent=`${T('syncDone')}: ${d.price_date} · ${T('localHistory')}: ${d.history_days||0} ${T('snapshotDays')}`;await loadStations()}catch(e){$('status').innerHTML=`<span class="warn">${T('syncFailed')}: ${esc(e.message)}</span>`}finally{b.disabled=false}
 }
 function relocate(lat,lon,zoom=13,reload=true,label=null){selectedStationId=null;current={lat,lon};currentLocationLabel=label||`${lat.toFixed(4)}, ${lon.toFixed(4)}`;setSearchGeometry(lat,lon);map.setView([lat,lon],zoom);$('locationSearch').value=currentLocationLabel;persistPrefs();if(reload)loadStations()}
 function useLocation(){if(!navigator.geolocation){$('status').textContent=T('browserGeoUnavailable');return}navigator.geolocation.getCurrentPosition(p=>relocate(p.coords.latitude,p.coords.longitude,14,true,T('currentLocation')),e=>$('status').textContent=`${T('locationDenied')}: ${e.message}`)}
 async function searchLocation(query){
  const results=$('searchResults');results.classList.add('show');results.innerHTML=`<div class="search-item">${T('searching')}</div>`;
- try{const r=await fetch(`/api/geocode?q=${encodeURIComponent(query)}&lang=${encodeURIComponent(lang)}`,{cache:'no-store'}),d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||`HTTP ${r.status}`);if(!d.results.length){results.innerHTML=`<div class="search-item">${T('searchNoResults')}</div>`;return}results.innerHTML=d.results.map((x,i)=>`<div class="search-item" data-i="${i}">${esc(x.display_name)}</div>`).join('');results.querySelectorAll('.search-item[data-i]').forEach(el=>el.addEventListener('click',()=>{const x=d.results[+el.dataset.i];results.classList.remove('show');relocate(x.lat,x.lon,14,true,x.display_name)}))}catch(e){results.innerHTML=`<div class="search-item">${T('searchError')}: ${esc(e.message)}</div>`}
+ try{const d=await DATA.searchPlaces({query,lang});if(!d.results.length){results.innerHTML=`<div class="search-item">${T('searchNoResults')}</div>`;return}results.innerHTML=d.results.map((x,i)=>`<div class="search-item" data-i="${i}">${esc(x.display_name)}</div>`).join('');results.querySelectorAll('.search-item[data-i]').forEach(el=>el.addEventListener('click',()=>{const x=d.results[+el.dataset.i];results.classList.remove('show');relocate(x.lat,x.lon,14,true,x.display_name)}))}catch(e){results.innerHTML=`<div class="search-item">${T('searchError')}: ${esc(e.message)}</div>`}
 }
 function pan(dir){const step=170,delta={up:[0,-step],down:[0,step],left:[-step,0],right:[step,0]}[dir];if(delta)map.panBy(delta,{animate:true})}
 function resizeMapSoon(){map.invalidateSize({pan:false});setTimeout(()=>map.invalidateSize({pan:false}),220)}
+
+function applyProviderCapabilities(){
+ $('sync').hidden=!DATA.capabilities.sync;
+ $('searchForm').hidden=!DATA.capabilities.search
+}
 
 function bindEvents(){
  document.querySelectorAll('[data-pan]').forEach(b=>b.addEventListener('click',()=>pan(b.dataset.pan)));document.querySelector('[data-zoom="in"]').addEventListener('click',()=>map.zoomIn());document.querySelector('[data-zoom="out"]').addEventListener('click',()=>map.zoomOut());document.querySelector('[data-recenter]').addEventListener('click',()=>map.setView([current.lat,current.lon],map.getZoom(),{animate:true}));$('fitRadiusNav').addEventListener('click',fitRadius);
  $('radius').addEventListener('input',e=>{$('radiusValue').textContent=`${e.target.value} km`;updateRadiusCircle();persistPrefs()});$('radius').addEventListener('change',loadStations);
  $('fillLitres').addEventListener('input',e=>{$('fillLitresValue').textContent=`${e.target.value} L`;persistPrefs();render()});
  $('fuel').addEventListener('change',()=>{persistPrefs();loadStations()});$('mode').addEventListener('change',()=>{persistPrefs();loadStations()});$('maxAgeDays').addEventListener('change',()=>{persistPrefs();render()});
- $('refresh').addEventListener('click',loadStations);$('sync').addEventListener('click',syncNow);$('locate').addEventListener('click',useLocation);$('rankSort').addEventListener('change',()=>{persistPrefs();render()});$('rankLimit').addEventListener('change',()=>{persistPrefs();render()});
+ $('refresh').addEventListener('click',loadStations);if(DATA.capabilities.sync)$('sync').addEventListener('click',syncNow);$('locate').addEventListener('click',useLocation);$('rankSort').addEventListener('change',()=>{persistPrefs();render()});$('rankLimit').addEventListener('change',()=>{persistPrefs();render()});
  $('filterToggle').addEventListener('click',()=>{$('filterPopover').hidden=!$('filterPopover').hidden});
  $('filterPriceEnabled').addEventListener('change',()=>{filterPriceEnabled=$('filterPriceEnabled').checked;persistPrefs();render()});
  $('filterDistanceEnabled').addEventListener('change',()=>{filterDistanceEnabled=$('filterDistanceEnabled').checked;persistPrefs();render()});
@@ -464,4 +479,4 @@ function bindEvents(){
  document.addEventListener('click',e=>{if(!e.target.closest('.search-row'))$('searchResults').classList.remove('show');if(!e.target.closest('#filterPopover')&&!e.target.closest('#filterToggle'))$('filterPopover').hidden=true})
 }
 
-applyPrefs();setSearchGeometry(current.lat,current.lon);bindEvents();applyLanguage();updateCustomScale();loadStations();
+applyPrefs();applyProviderCapabilities();setSearchGeometry(current.lat,current.lon);bindEvents();applyLanguage();updateCustomScale();loadStations();

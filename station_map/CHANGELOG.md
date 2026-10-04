@@ -11,6 +11,17 @@ history**. The earlier `v1`…`v8` ZIP names were development labels rather than
 formal semantic-version tags. SemVer becomes the canonical station-map version
 scheme from 0.8.2 onward.
 
+## [0.9.0] - 2026-10-04
+
+### Added
+- Added a browser data-provider layer so the map can use either the existing local API or generated static data.
+- Added a static provider that loads only the required 0.5° station cells, searches the generated municipality index, and exposes the generated seven-day price history.
+- Added provider capabilities so unsupported controls, such as manual sync and longer history windows, are hidden automatically in static mode.
+
+### Changed
+- Decoupled the frontend from direct `/api/*` requests while preserving the existing local Python/SQLite behavior.
+- Added English and Italian status/help text for the static-data mode.
+
 ## [0.8.11] - 2026-10-03
 
 ### Changed

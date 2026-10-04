@@ -7,17 +7,14 @@ separate from changelogs and current-state architecture documents.
 
 Near-term work:
 
-- Add a small browser data-provider boundary so the existing UI can use either
-  the local `/api/*` backend or generated static data.
-- Add the static provider for 0.5° current-price cells and the generated
-  municipality index.
-- Expose generated seven-day rolling history through lazy-loaded history cells,
-  preserving missing dates without interpolation.
 - Assemble an allowlisted Pages artifact containing only public HTML/CSS/JS,
-  vendored Leaflet assets, and generated public data.
-- Add the Pages deployment workflow with validation, manual dispatch, and
-  scheduled refreshes.
-- Measure actual morning MIMIT publication timing and keep a fallback schedule
+  vendored Leaflet assets, generated runtime configuration, and generated
+  public data.
+- Add focused static-vs-local parity checks for representative station queries
+  and grid-boundary cases.
+- Add the Pages deployment workflow with validation, manual dispatch, rolling
+  history-state persistence, and scheduled refreshes.
+- Measure actual morning source publication timing and keep a fallback schedule
   only if the data justify it.
 - Make stale-data status visible when the upstream snapshot or scheduled
   deployment has not refreshed.

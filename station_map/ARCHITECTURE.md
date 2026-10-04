@@ -1,15 +1,17 @@
 # Architecture
 
-The station map is a small dependency-light local application. The repository
-also contains a static-data build path that reuses the same MIMIT parser as
-groundwork for GitHub Pages without changing the local persistence model.
+The station map is a small dependency-light local application. The same browser
+UI can also use generated static data through a provider boundary, without
+changing the local persistence model.
 
-## Local application
+## Browser and local application
 
 ```text
 station_map/
 ├── index.html
 ├── static/
+│   ├── runtime-config.js
+│   ├── data-provider.js
 │   ├── styles.css
 │   ├── app.js
 │   └── vendor/leaflet/
@@ -34,8 +36,12 @@ Responsibilities are separated as follows:
 - `db.py` owns the SQLite schema and persistent data access.
 - `services.py` owns nearby search, history, geocoding, and auto-sync.
 - `server.py` exposes local HTTP routes and serves the frontend shell.
-- `static/app.js` owns browser map behavior, ranking, filtering, history UI,
-  preferences, and localization.
+- `runtime-config.js` selects the browser data mode; the tracked default is
+  `local`.
+- `data-provider.js` adapts either local `/api/*` routes or generated static
+  data to one browser-facing interface.
+- `app.js` owns browser map behavior, ranking, filtering, history UI,
+  preferences, and localization without depending directly on the data source.
 
 ## Local data invariants
 
@@ -53,9 +59,39 @@ Responsibilities are separated as follows:
 7. **The local browser does not fetch current MIMIT data directly.** External
    current-data access stays behind the local HTTP server.
 
+## Browser data providers
+
+The local provider preserves the existing API behavior:
+
+```text
+getStations  → /api/stations
+getHistory   → /api/history
+searchPlaces → /api/geocode
+syncCurrent  → /api/sync
+```
+
+Its capabilities expose current sync plus 7/30/90-day local history.
+
+The static provider reads generated files directly:
+
+```text
+getStations  → data/metadata.json + relevant 0.5° cells
+getHistory   → data/history/metadata.json + one history cell
+searchPlaces → data/places.json
+syncCurrent  → unsupported
+```
+
+It computes exact Haversine distance in the browser after loading the geographic
+cells intersecting the query bounding box. Static history is limited to the
+generated rolling seven-day window, and municipality search uses the generated
+place index rather than a public geocoding service.
+
+The UI reads provider capabilities: unsupported sync controls are hidden and
+history buttons reflect the provider's available day windows.
+
 ## Static-data build
 
-Repository-level static-data groundwork is implemented in:
+Repository-level static-data generation is implemented in:
 
 ```text
 tools/build_web_data.py          validated static-data builder
@@ -79,16 +115,16 @@ Current generated-data decisions are:
 Generated web datasets, raw downloaded CSVs, and rolling-history state are build
 artifacts rather than source-controlled files.
 
-The browser static provider and GitHub Pages deployment workflow are not yet
-implemented. Planned work belongs in [`ROADMAP.md`](../ROADMAP.md).
+The allowlisted static-site assembly and GitHub Pages deployment workflow are
+not yet implemented. Planned work belongs in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Architecture boundary
 
-The local application and static deployment mode should remain peers that share
+The local application and static deployment mode remain peers that share
 parsing, data semantics, and browser behavior where practical. The local SQLite
-application must not depend on Pages build state, and the static site must not
-depend on a long-running Python server.
+application does not depend on Pages build state, and the static provider does
+not depend on a long-running Python server.
 
 If browser code later grows enough to justify another split, separate it by
-behavior or data-provider responsibility rather than introducing a JavaScript
+behavior or provider responsibility rather than introducing a JavaScript
 framework solely for file organization.

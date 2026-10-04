@@ -5,8 +5,9 @@ with a preference for primary and official sources.
 
 The repository contains two related components:
 
-- [`station_map/`](station_map/) — an interactive local map of current Italian
-  fuel-station prices and local station history.
+- [`station_map/`](station_map/) — an interactive map of current Italian
+  fuel-station prices, with a local Python/SQLite mode and browser support for
+  generated static data.
 - [`analysis/`](analysis/) — a reproducible toolkit for national and historical
   fuel-price analysis and price decomposition.
 
@@ -14,7 +15,8 @@ The repository contains two related components:
 
 - [`DEVELOPMENT.md`](DEVELOPMENT.md) — build, run, test, branch, and release
   workflow.
-- [`station_map/README.md`](station_map/README.md) — current station-map usage.
+- [`station_map/README.md`](station_map/README.md) — current local station-map
+  usage.
 - [`analysis/README.md`](analysis/README.md) — analysis toolkit usage and data
   semantics.
 - [`ROADMAP.md`](ROADMAP.md) — future ideas and planned work.
@@ -32,13 +34,15 @@ The repository contains two related components:
 
 ## Repository status
 
-The local station map is the working application. Repository CI and the
-validated static-data builder are in place as foundations for a GitHub Pages
-deployment; the static browser provider and Pages deployment workflow are not
-yet connected.
+The local Python/SQLite station map remains the working application. Repository
+CI, the validated static-data builder, and the browser static-data provider are
+implemented. Static-site assembly and GitHub Pages deployment are the next
+integration steps.
 
 ## Data sources and licensing
 
 Project code is released under the [MIT License](LICENSE).
 
-Official source data and third-party material have their own provenance and reuse terms, see [`DATA_SOURCES_AND_LICENSES.md`](DATA_SOURCES_AND_LICENSES.md).
+Official source data and third-party material have their own provenance and
+reuse terms, see
+[`DATA_SOURCES_AND_LICENSES.md`](DATA_SOURCES_AND_LICENSES.md).
