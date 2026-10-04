@@ -3,8 +3,8 @@ name: Deploy Pages
 on:
   workflow_dispatch:
   # Bootstrap only: workflow_dispatch is not available until this file exists on
-  # the default branch. This narrow trigger lets the feature branch prove one
-  # real Pages deployment; remove it before the final merge.
+  # the default branch. This narrow trigger lets the feature branch prove real
+  # Pages deployments; remove it before the final merge.
   push:
     branches:
       - feat/static-provider
@@ -17,8 +17,9 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
+      actions: write
       contents: read
       pages: read
 
@@ -45,14 +46,30 @@ jobs:
           python tools/fetch_web_sources.py \
             --output _build/sources
 
-      - name: Build validated static data
+      - name: Restore previous rolling history state
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
+          python tools/restore_history_artifact.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --output _build/history-state.previous.json \
+            --allow-missing
+
+      - name: Build validated static data
+        shell: bash
+        run: |
+          history_args=()
+          if [[ -f _build/history-state.previous.json ]]; then
+            history_args+=(--history-state _build/history-state.previous.json)
+          fi
+
           python tools/build_web_data.py \
             --output _build/data \
             --registry-file _build/sources/anagrafica_impianti_attivi.csv \
             --price-file _build/sources/prezzo_alle_8.csv \
             --localities-file _build/sources/LocalitaPuntuali_21.zip \
             --municipalities-2021-file _build/sources/Limiti2021_g.zip \
+            "${history_args[@]}" \
             --history-state-output _build/history-state.json
 
       - name: Check static/local parity
@@ -69,6 +86,16 @@ jobs:
             --output _site
           cat _site/.italy-fuel-pages-build
 
+      - name: Persist rolling history state
+        uses: actions/upload-artifact@v7
+        with:
+          name: pages-history-state
+          path: _build/history-state.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 9
+          overwrite: true
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
@@ -77,7 +104,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       pages: write
       id-token: write

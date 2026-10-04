@@ -11,6 +11,19 @@ history**. The earlier `v1`…`v8` ZIP names were development labels rather than
 formal semantic-version tags. SemVer becomes the canonical station-map version
 scheme from 0.8.2 onward.
 
+## [0.9.5] - 2026-10-05
+
+### Added
+- Added rolling seven-day Pages history-state persistence through GitHub Actions artifacts, with restore-before-build and upload-after-validation behavior.
+- Added validation for restored history-state artifacts before they are reused by the static-data builder.
+
+### Changed
+- Pinned Pages workflow runners to Ubuntu 24.04 so deployment does not follow the upcoming `ubuntu-latest` image migration.
+- Pages history-state artifacts are retained for 30 days and remain outside both source control and the deployed site.
+
+### Fixed
+- Added an explicit empty favicon declaration so browsers no longer request a missing `/favicon.ico`.
+
 ## [0.9.4] - 2026-10-04
 
 ### Added

@@ -7,8 +7,6 @@ separate from changelogs and current-state architecture documents.
 
 Near-term work:
 
-- Persist the rolling seven-day public history state across Pages workflow
-  runs without committing generated state to the source branch.
 - Remove the temporary feature-branch deployment bootstrap before the final
   merge; keep manual dispatch as the steady-state operator trigger.
 - Measure actual morning source publication timing and keep a fallback schedule

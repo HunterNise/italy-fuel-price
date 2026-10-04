@@ -101,6 +101,7 @@ tools/build_web_data.py          validated static-data builder
 tools/build_static_site.py       allowlisted Pages-site assembler
 tools/check_static_parity.py     static/local current-query parity checker
 tools/fetch_web_sources.py       coherent deployment source-bundle downloader
+tools/restore_history_artifact.py  cross-run Pages history-state restore
 tests/test_build_web_data.py     builder/grid/history tests
 tests/test_build_static_site.py  site allowlist/safety tests
 tests/test_static_parity.py      synthetic cross-cell parity tests
@@ -151,15 +152,23 @@ single source bundle is downloaded first; the static-data builder and
 static/local parity checker then consume those exact cached files before the
 allowlisted site is assembled and uploaded.
 
-The build job uses read-only repository/Pages access. The separate deployment
-job receives only the `pages: write` and OIDC `id-token: write` permissions
-required by GitHub Pages. The uploaded artifact explicitly includes hidden
-generated site files such as `.nojekyll`.
+The build job has read-only repository/Pages access plus `actions: write`,
+which is required to restore and refresh its rolling history artifact. The
+separate deployment job receives only the `pages: write` and OIDC
+`id-token: write` permissions required by GitHub Pages. The uploaded Pages
+artifact explicitly includes hidden generated site files such as `.nojekyll`.
 
-The current first-deployment workflow keeps rolling-history state only for that
-workflow run, so the public seven-day axis is seeded by the current snapshot but
-is not yet accumulated across Actions runs. Persistent rolling history and
-scheduled refreshes remain planned work in [`ROADMAP.md`](../ROADMAP.md).
+Before each static-data build, `tools/restore_history_artifact.py` queries the
+repository Actions-artifact API for the newest non-expired
+`pages-history-state` artifact, validates its seven-day history-state schema,
+and restores it when available. The data builder updates/prunes that state and
+the workflow uploads the refreshed JSON again with 30-day artifact retention.
+The state is never copied into `_site` and is never committed.
+
+Because this is a public repository, Actions artifacts must be treated as
+non-sensitive rather than secret storage. The retained state contains only
+derived public MIMIT snapshot data, so that visibility is acceptable here.
+Scheduled refreshes remain planned work in [`ROADMAP.md`](../ROADMAP.md).
 
 While this feature branch is being verified, the workflow contains a narrow
 push bootstrap that matches only changes to the workflow file on
