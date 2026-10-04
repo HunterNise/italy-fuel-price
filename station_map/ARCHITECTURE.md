@@ -77,14 +77,15 @@ The static provider reads generated files directly:
 ```text
 getStations  → data/metadata.json + relevant 0.5° cells
 getHistory   → data/history/metadata.json + one history cell
-searchPlaces → data/places.json
+searchPlaces → data/places.json + optional data/localities.json
 syncCurrent  → unsupported
 ```
 
 It computes exact Haversine distance in the browser after loading the geographic
 cells intersecting the query bounding box. Static history is limited to the
-generated rolling seven-day window, and municipality search uses the generated
-place index rather than a public geocoding service.
+generated rolling seven-day window. Static place search uses the generated
+municipality index and, when enabled, a lazy-loaded ISTAT 2021 residential
+locality index rather than a public geocoding service.
 
 The UI reads provider capabilities: unsupported sync controls are hidden and
 history buttons reflect the provider's available day windows.
@@ -107,6 +108,7 @@ Current generated-data decisions are:
 - supported fuels: Benzina, Gasolio, GPL, Metano;
 - 0.5° geographic current-data cells;
 - generated municipality/place index using median station coordinates;
+- optional ISTAT 2021 inhabited-centre/nucleus search index;
 - optional seven-calendar-day rolling history state;
 - missing history dates remain missing/null rather than interpolated;
 - history state must live outside the public generated-data directory;

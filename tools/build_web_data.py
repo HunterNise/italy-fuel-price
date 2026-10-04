@@ -13,6 +13,20 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+TOOLS_DIR = str(Path(__file__).resolve().parent)
+if TOOLS_DIR not in sys.path:
+    sys.path.insert(0, TOOLS_DIR)
+
+from istat_localities import (
+    ISTAT_LOCALITIES_LICENSE,
+    ISTAT_LOCALITIES_LICENSE_URL,
+    ISTAT_LOCALITIES_REFERENCE_YEAR,
+    ISTAT_LOCALITIES_URL,
+    LocalityError,
+    download_localities,
+    parse_localities_archive,
+)
+
 SUPPORTED_FUELS = ("Benzina", "Gasolio", "GPL", "Metano")
 GRID_SIZE_DEGREES = 0.5
 HISTORY_WINDOW_DAYS = 7
@@ -428,9 +442,29 @@ def load_sources(args, repo_root: Path):
     }
 
 
+def load_locality_source(args):
+    if args.localities_file:
+        blob = Path(args.localities_file).expanduser().read_bytes()
+    elif args.download_localities:
+        blob = download_localities()
+    else:
+        return None
+
+    try:
+        rows = parse_localities_archive(blob)
+    except LocalityError as exc:
+        raise BuildError(str(exc)) from exc
+    if len(rows) < 50_000:
+        raise BuildError(
+            f"ISTAT residential-locality count {len(rows):,} is unexpectedly small"
+        )
+    return {"blob": blob, "rows": rows}
+
+
 def build(args) -> dict:
     repo_root = find_repo_root(args.repo_root)
     source = load_sources(args, repo_root)
+    locality_source = load_locality_source(args)
     records, counts = normalize_current(source["station_rows"], source["price_rows"])
     validate_snapshot(counts)
 
@@ -463,6 +497,17 @@ def build(args) -> dict:
         },
     )
 
+    if locality_source:
+        write_json(
+            output / "localities.json",
+            {
+                "schema_version": SCHEMA_VERSION,
+                "reference_year": ISTAT_LOCALITIES_REFERENCE_YEAR,
+                "fields": ["name", "type", "pro_com", "lat", "lon"],
+                "localities": locality_source["rows"],
+            },
+        )
+
     history_metadata = None
     if history_enabled:
         assert state is not None and state_output is not None
@@ -471,6 +516,33 @@ def build(args) -> dict:
         write_json(state_output, state)
 
     generated_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    source_files = {
+        "registry": {
+            "bytes": len(source["registry_blob"]),
+            "sha256": sha256(source["registry_blob"]),
+        },
+        "prices": {
+            "bytes": len(source["price_blob"]),
+            "sha256": sha256(source["price_blob"]),
+        },
+    }
+    locality_metadata = {
+        "enabled": locality_source is not None,
+        "count": len(locality_source["rows"]) if locality_source else 0,
+        "path": "localities.json" if locality_source else None,
+        "reference_year": (
+            ISTAT_LOCALITIES_REFERENCE_YEAR if locality_source else None
+        ),
+        "source_url": ISTAT_LOCALITIES_URL if locality_source else None,
+        "license": ISTAT_LOCALITIES_LICENSE if locality_source else None,
+        "license_url": ISTAT_LOCALITIES_LICENSE_URL if locality_source else None,
+    }
+    if locality_source:
+        source_files["localities"] = {
+            "bytes": len(locality_source["blob"]),
+            "sha256": sha256(locality_source["blob"]),
+        }
+
     metadata = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": generated_at,
@@ -483,16 +555,7 @@ def build(args) -> dict:
         },
         "registry_date": source["registry_date"],
         "price_date": source["price_date"],
-        "source_files": {
-            "registry": {
-                "bytes": len(source["registry_blob"]),
-                "sha256": sha256(source["registry_blob"]),
-            },
-            "prices": {
-                "bytes": len(source["price_blob"]),
-                "sha256": sha256(source["price_blob"]),
-            },
-        },
+        "source_files": source_files,
         "grid": {
             "size_degrees": GRID_SIZE_DEGREES,
             "cell_key": "floor(lat / size)_floor(lon / size)",
@@ -503,6 +566,7 @@ def build(args) -> dict:
             "count": len(places),
             "path": "places.json",
         },
+        "localities": locality_metadata,
         "history": {
             "enabled": history_enabled,
             "window_days": HISTORY_WINDOW_DAYS if history_enabled else 0,
@@ -524,6 +588,9 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--output", required=True, help="Generated data directory; replaced by this command.")
     ap.add_argument("--registry-file", help="Use this cached MIMIT registry CSV instead of downloading.")
     ap.add_argument("--price-file", help="Use this cached MIMIT price CSV instead of downloading.")
+    localities = ap.add_mutually_exclusive_group()
+    localities.add_argument("--localities-file", help="Use this cached ISTAT LocalitaPuntuali_21.zip for static locality search.")
+    localities.add_argument("--download-localities", action="store_true", help="Download the official ISTAT 2021 point-locality archive and build localities.json.")
     ap.add_argument("--history-state", help="Previous rolling-history JSON state; missing path starts fresh.")
     ap.add_argument("--history-state-output", help="Write updated rolling-history state here and generate public 7-day history.")
     return ap
@@ -544,6 +611,11 @@ def main() -> int:
         f"{counts['joined_supported_price_rows']:,} supported prices, "
         f"{len(metadata['grid']['cells']):,} current cells, "
         f"{metadata['places']['count']:,} places"
+        + (
+            f", {metadata['localities']['count']:,} localities"
+            if metadata["localities"]["enabled"]
+            else ""
+        )
     )
     print(
         f"MIMIT registry {metadata['registry_date']} · prices {metadata['price_date']} · "

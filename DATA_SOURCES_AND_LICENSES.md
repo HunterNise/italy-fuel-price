@@ -25,6 +25,27 @@ application or its derived calculations.
 
 [Italian Open Data License 2.0](https://www.dati.gov.it/content/italian-open-data-license-v20)
 
+## ISTAT locality search data
+
+The static/public place search can include the official ISTAT 2021 point-locality
+dataset (`LocalitaPuntuali_21.zip`). The generated public index keeps inhabited
+centres and inhabited nuclei (locality types 1 and 2) and converts their point
+coordinates for browser map centring.
+
+Primary source:
+
+- [ISTAT 2021 point-locality archive](https://www.istat.it/storage/cartografia/basi_territoriali/2021/LocalitaPuntuali_21.zip)
+
+The generated locality index is kept separate from the smaller MIMIT-derived
+municipality index and is loaded lazily when a sufficiently specific static
+place search needs it.
+
+ISTAT geographic material is attributed to ISTAT and reused under CC BY 4.0.
+The generated dataset metadata retains the source URL, reference year and
+licence information.
+
+[Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/)
+
 ## MASE analysis data
 
 The `analysis/` component references public price series from the Italian

@@ -36,13 +36,21 @@ For local sync/history behavior, see
 Use cached MIMIT inputs for repeatable local verification:
 
 ```bash
-python3 tools/build_web_data.py   --output /tmp/italy-fuel-web-data   --registry-file /path/to/anagrafica_impianti_attivi.csv   --price-file /path/to/prezzo_alle_8.csv   --history-state-output /tmp/italy-fuel-history-state.json
+python3 tools/build_web_data.py \
+  --output /tmp/italy-fuel-web-data \
+  --registry-file /path/to/anagrafica_impianti_attivi.csv \
+  --price-file /path/to/prezzo_alle_8.csv \
+  --localities-file /path/to/LocalitaPuntuali_21.zip \
+  --history-state-output /tmp/italy-fuel-history-state.json
 ```
 
 Use live current feeds only when an integration/deployment check is intended:
 
 ```bash
-python3 tools/build_web_data.py   --output /tmp/italy-fuel-web-data   --history-state-output /tmp/italy-fuel-history-state.json
+python3 tools/build_web_data.py \
+  --output /tmp/italy-fuel-web-data \
+  --download-localities \
+  --history-state-output /tmp/italy-fuel-history-state.json
 ```
 
 Generated web data and rolling-history state are build artifacts and are not

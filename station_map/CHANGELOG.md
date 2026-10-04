@@ -11,6 +11,15 @@ history**. The earlier `v1`…`v8` ZIP names were development labels rather than
 formal semantic-version tags. SemVer becomes the canonical station-map version
 scheme from 0.8.2 onward.
 
+## [0.9.1] - 2026-10-04
+
+### Added
+- Added optional static place search across the official ISTAT 2021 residential point-locality dataset, covering inhabited centres and inhabited nuclei in addition to municipalities.
+
+### Changed
+- Static place search now ignores punctuation differences such as spaces and hyphens and combines municipality/locality matches with deterministic ranking.
+- Locality data are generated as a separate lazy-loaded public index so they do not increase the initial page payload.
+
 ## [0.9.0] - 2026-10-04
 
 ### Added

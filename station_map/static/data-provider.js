@@ -24,7 +24,8 @@ function versioned(path,version){
  return version?`${url}?v=${encodeURIComponent(version)}`:url
 }
 function normalizeText(value){
- return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('it')
+ const plain=String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('it').replaceAll('ß','ss');
+ return plain.replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')
 }
 function boolFlag(value){return value===true||value===1||value==='1'}
 function haversineKm(lat1,lon1,lat2,lon2){
@@ -72,7 +73,7 @@ function createLocalProvider(){
 }
 
 function createStaticProvider(){
- let metadataPromise=null,placesPromise=null,historyMetadataPromise=null;
+ let metadataPromise=null,placesPromise=null,localitiesPromise=null,historyMetadataPromise=null;
  const currentCells=new Map(),historyCells=new Map(),stationCellById=new Map();
 
  async function metadata(){
@@ -88,6 +89,16 @@ function createStaticProvider(){
    })()
   }
   return placesPromise
+ }
+ async function localities(){
+  if(!localitiesPromise){
+   localitiesPromise=(async()=>{
+    const meta=await metadata();
+    if(!meta.localities||!meta.localities.enabled)return{localities:[]};
+    return fetchJson(versioned(meta.localities.path||'localities.json',meta.generated_at))
+   })()
+  }
+  return localitiesPromise
  }
  async function currentCell(key){
   if(!currentCells.has(key)){
@@ -210,36 +221,91 @@ function createStaticProvider(){
     interpolated:false
    }
   },
-  async searchPlaces({query}){
-   const q=normalizeText(query).trim();
+  async searchPlaces({query,lang}){
+   const q=normalizeText(query);
    if(!q)return{ok:true,results:[]};
-   const payload=await places();
-   const ranked=[];
-   for(const place of payload.places||[]){
+   const placePayload=await places();
+   const municipalityMatches=[];
+   for(const place of placePayload.places||[]){
     const name=normalizeText(place.name),province=normalizeText(place.province);
     const label=`${name} ${province}`.trim();
     let rank=99;
     if(name===q)rank=0;
-    else if(name.startsWith(q))rank=1;
-    else if(label.startsWith(q))rank=2;
-    else if(name.includes(q))rank=3;
-    else if(label.includes(q))rank=4;
+    else if(name.startsWith(q)||label.startsWith(q))rank=2;
+    else if(name.includes(q)||label.includes(q))rank=4;
     if(rank===99)continue;
-    ranked.push({rank,place})
+    municipalityMatches.push({rank,place})
    }
-   ranked.sort((a,b)=>a.rank-b.rank
+
+   const localityMatches=[];
+   if(q.length>=3){
+    const localityPayload=await localities();
+    for(const row of localityPayload.localities||[]){
+     const [rawName,rawType,proCom,rawLat,rawLon]=row;
+     const name=normalizeText(rawName);
+     let rank=99;
+     if(name===q)rank=1;
+     else if(name.startsWith(q))rank=3;
+     else if(name.includes(q))rank=5;
+     if(rank===99)continue;
+
+     const lat=Number(rawLat),lon=Number(rawLon),type=Number(rawType);
+     const duplicateMunicipality=municipalityMatches.some(({place})=>
+      normalizeText(place.name)===name&&
+      haversineKm(lat,lon,Number(place.lat),Number(place.lon))<=15
+     );
+     if(duplicateMunicipality)continue;
+     localityMatches.push({rank,name:rawName,type,proCom,lat,lon})
+    }
+   }
+
+   municipalityMatches.sort((a,b)=>a.rank-b.rank
     ||Number(b.place.station_count||0)-Number(a.place.station_count||0)
     ||String(a.place.name).localeCompare(String(b.place.name),'it'));
-   return{
-    ok:true,
-    results:ranked.slice(0,6).map(({place})=>({
-     display_name:[place.name,place.province].filter(Boolean).join(', '),
-     lat:Number(place.lat),
-     lon:Number(place.lon),
-     type:'municipality',
-     boundingbox:[]
-    }))
+
+   localityMatches.sort((a,b)=>a.rank-b.rank
+    ||a.type-b.type
+    ||String(a.name).localeCompare(String(b.name),'it')
+    ||String(a.proCom).localeCompare(String(b.proCom)));
+
+   const duplicateNames=new Map();
+   for(const item of localityMatches){
+    const key=normalizeText(item.name);
+    duplicateNames.set(key,(duplicateNames.get(key)||0)+1)
    }
+
+   const ranked=[
+    ...municipalityMatches.map(({rank,place})=>({
+     rank,
+     result:{
+      display_name:[place.name,place.province].filter(Boolean).join(', '),
+      lat:Number(place.lat),
+      lon:Number(place.lon),
+      type:'municipality',
+      boundingbox:[]
+     }
+    })),
+    ...localityMatches.map(item=>{
+     const italian=String(lang||'').toLowerCase().startsWith('it');
+     const kind=item.type===2
+      ?(italian?'nucleo abitato':'inhabited nucleus')
+      :(italian?'località':'locality');
+     const repeated=(duplicateNames.get(normalizeText(item.name))||0)>1;
+     const suffix=repeated?` · ${kind} (${item.proCom})`:` · ${kind}`;
+     return{
+      rank:item.rank,
+      result:{
+       display_name:`${item.name}${suffix}`,
+       lat:item.lat,
+       lon:item.lon,
+       type:'locality',
+       boundingbox:[]
+      }
+     }
+    })
+   ];
+   ranked.sort((a,b)=>a.rank-b.rank||a.result.display_name.localeCompare(b.result.display_name,'it'));
+   return{ok:true,results:ranked.slice(0,8).map(item=>item.result)}
   },
   async syncCurrent(){
    throw Error('Current snapshot sync is unavailable in static mode.')
