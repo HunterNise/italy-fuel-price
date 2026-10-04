@@ -11,6 +11,15 @@ history**. The earlier `v1`…`v8` ZIP names were development labels rather than
 formal semantic-version tags. SemVer becomes the canonical station-map version
 scheme from 0.8.2 onward.
 
+## [0.9.2] - 2026-10-04
+
+### Added
+- Added a same-vintage ISTAT 31 December 2021 municipality lookup for static locality search.
+
+### Changed
+- Locality results now show their parent municipality name, such as `Lido di Ostia — Roma`, instead of exposing `PRO_COM` as the normal disambiguator.
+- Cached locality builds now require the matching 2021 administrative-boundaries archive so locality and municipality labels use the same territorial snapshot.
+
 ## [0.9.1] - 2026-10-04
 
 ### Added

@@ -4,6 +4,7 @@ from __future__ import annotations
 import csv
 import io
 import math
+import struct
 import unicodedata
 import urllib.request
 import zipfile
@@ -11,6 +12,10 @@ import zipfile
 ISTAT_LOCALITIES_URL = (
     "https://www.istat.it/storage/cartografia/basi_territoriali/2021/"
     "LocalitaPuntuali_21.zip"
+)
+ISTAT_MUNICIPALITIES_2021_URL = (
+    "https://www.istat.it/storage/cartografia/confini_amministrativi/"
+    "generalizzati/Limiti2021_g.zip"
 )
 ISTAT_LOCALITIES_LICENSE = "CC BY 4.0"
 ISTAT_LOCALITIES_LICENSE_URL = "https://creativecommons.org/licenses/by/4.0/"
@@ -22,13 +27,23 @@ class LocalityError(RuntimeError):
     pass
 
 
-def download_localities(url: str = ISTAT_LOCALITIES_URL) -> bytes:
+def _download(url: str) -> bytes:
     request = urllib.request.Request(
         url,
         headers={"User-Agent": "italy-fuel-price locality builder/1.0"},
     )
     with urllib.request.urlopen(request, timeout=120) as response:
         return response.read()
+
+
+def download_localities(url: str = ISTAT_LOCALITIES_URL) -> bytes:
+    return _download(url)
+
+
+def download_municipalities_2021(
+    url: str = ISTAT_MUNICIPALITIES_2021_URL,
+) -> bytes:
+    return _download(url)
 
 
 def _decode_csv(blob: bytes) -> str:
@@ -38,6 +53,18 @@ def _decode_csv(blob: bytes) -> str:
         except UnicodeDecodeError:
             continue
     raise LocalityError("Could not decode ISTAT locality CSV")
+
+
+def _decode_dbf(value: bytes) -> str:
+    value = value.rstrip(b" \x00")
+    if not value:
+        return ""
+    for encoding in ("utf-8", "cp1252", "latin-1"):
+        try:
+            return value.decode(encoding).strip()
+        except UnicodeDecodeError:
+            continue
+    return value.decode("latin-1", errors="replace").strip()
 
 
 def _dialect(text: str):
@@ -156,6 +183,87 @@ def utm32n_to_wgs84(easting: float, northing: float) -> tuple[float, float]:
     return math.degrees(lat), 9.0 + math.degrees(lon)
 
 
+def _dbf_fields(blob: bytes) -> tuple[int, int, int, list[tuple[str, int, int]]]:
+    if len(blob) < 33:
+        raise LocalityError("Invalid DBF header")
+    record_count = struct.unpack_from("<I", blob, 4)[0]
+    header_length = struct.unpack_from("<H", blob, 8)[0]
+    record_length = struct.unpack_from("<H", blob, 10)[0]
+    if header_length > len(blob) or record_length < 2:
+        raise LocalityError("Invalid DBF dimensions")
+
+    fields = []
+    pos = 32
+    offset = 1
+    while pos + 32 <= header_length and blob[pos] != 0x0D:
+        desc = blob[pos : pos + 32]
+        name = _decode_dbf(desc[0:11].split(b"\x00", 1)[0]).upper()
+        length = desc[16]
+        if name and length:
+            fields.append((name, offset, length))
+            offset += length
+        pos += 32
+    return record_count, header_length, record_length, fields
+
+
+def _read_dbf(blob: bytes) -> tuple[list[str], list[dict[str, str]]]:
+    record_count, header_length, record_length, fields = _dbf_fields(blob)
+    names = [name for name, _offset, _length in fields]
+    rows = []
+    pos = header_length
+    for _ in range(record_count):
+        record = blob[pos : pos + record_length]
+        pos += record_length
+        if len(record) < record_length:
+            break
+        if record[0:1] == b"*":
+            continue
+        row = {}
+        for name, offset, length in fields:
+            row[name] = _decode_dbf(record[offset : offset + length])
+        rows.append(row)
+    return names, rows
+
+
+def parse_municipalities_2021_archive(blob: bytes) -> dict[str, str]:
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(blob))
+    except zipfile.BadZipFile as exc:
+        raise LocalityError("Invalid ISTAT 2021 administrative-boundaries ZIP") from exc
+
+    candidates = []
+    for name in zf.namelist():
+        if not name.lower().endswith(".dbf"):
+            continue
+        dbf_blob = zf.read(name)
+        try:
+            fields, rows = _read_dbf(dbf_blob)
+        except LocalityError:
+            continue
+        field_set = set(fields)
+        if {"PRO_COM", "COMUNE"} <= field_set:
+            candidates.append((name, rows))
+
+    if len(candidates) != 1:
+        raise LocalityError(
+            "Expected exactly one municipality DBF with PRO_COM and COMUNE; "
+            f"found {[name for name, _rows in candidates]}"
+        )
+
+    lookup = {}
+    for raw in candidates[0][1]:
+        code = _code6(raw.get("PRO_COM") or "")
+        municipality = str(raw.get("COMUNE") or "").strip()
+        if code and municipality:
+            lookup[code] = municipality
+
+    if len(lookup) < 7_500:
+        raise LocalityError(
+            f"ISTAT 2021 municipality lookup is unexpectedly small: {len(lookup):,}"
+        )
+    return lookup
+
+
 def parse_localities_archive(blob: bytes) -> list[list]:
     try:
         zf = zipfile.ZipFile(io.BytesIO(blob))
@@ -221,3 +329,25 @@ def parse_localities_archive(blob: bytes) -> list[list]:
         )
     )
     return rows
+
+
+def attach_municipality_names(
+    locality_rows: list[list],
+    municipalities: dict[str, str],
+) -> list[list]:
+    enriched = []
+    missing = set()
+    for name, locality_type, pro_com, lat, lon in locality_rows:
+        municipality = municipalities.get(str(pro_com), "")
+        if not municipality:
+            missing.add(str(pro_com))
+        enriched.append(
+            [name, locality_type, str(pro_com), municipality, lat, lon]
+        )
+    if missing:
+        sample = ", ".join(sorted(missing)[:10])
+        raise LocalityError(
+            "2021 municipality lookup did not resolve locality codes: "
+            f"{sample}" + ("…" if len(missing) > 10 else "")
+        )
+    return enriched

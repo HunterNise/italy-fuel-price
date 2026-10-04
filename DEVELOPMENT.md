@@ -41,6 +41,7 @@ python3 tools/build_web_data.py \
   --registry-file /path/to/anagrafica_impianti_attivi.csv \
   --price-file /path/to/prezzo_alle_8.csv \
   --localities-file /path/to/LocalitaPuntuali_21.zip \
+  --municipalities-2021-file /path/to/Limiti2021_g.zip \
   --history-state-output /tmp/italy-fuel-history-state.json
 ```
 

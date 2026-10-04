@@ -85,7 +85,9 @@ It computes exact Haversine distance in the browser after loading the geographic
 cells intersecting the query bounding box. Static history is limited to the
 generated rolling seven-day window. Static place search uses the generated
 municipality index and, when enabled, a lazy-loaded ISTAT 2021 residential
-locality index rather than a public geocoding service.
+locality index rather than a public geocoding service. Locality `PRO_COM` values
+are resolved against ISTAT's 31 December 2021 municipality layer so parent
+municipality labels use the same territorial vintage as the locality data.
 
 The UI reads provider capabilities: unsupported sync controls are hidden and
 history buttons reflect the provider's available day windows.

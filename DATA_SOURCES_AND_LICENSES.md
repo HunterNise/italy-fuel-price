@@ -32,9 +32,15 @@ dataset (`LocalitaPuntuali_21.zip`). The generated public index keeps inhabited
 centres and inhabited nuclei (locality types 1 and 2) and converts their point
 coordinates for browser map centring.
 
-Primary source:
+Primary sources:
 
 - [ISTAT 2021 point-locality archive](https://www.istat.it/storage/cartografia/basi_territoriali/2021/LocalitaPuntuali_21.zip)
+- [ISTAT administrative boundaries at 31 December 2021](https://www.istat.it/storage/cartografia/confini_amministrativi/generalizzati/Limiti2021_g.zip)
+
+The 2021 administrative-boundaries municipality layer supplies `PRO_COM` and
+the corresponding municipality name. Using the same 31 December 2021
+territorial snapshot avoids joining historical locality codes against today's
+administrative geography.
 
 The generated locality index is kept separate from the smaller MIMIT-derived
 municipality index and is loaded lazily when a sufficiently specific static

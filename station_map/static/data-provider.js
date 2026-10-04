@@ -241,12 +241,14 @@ function createStaticProvider(){
    if(q.length>=3){
     const localityPayload=await localities();
     for(const row of localityPayload.localities||[]){
-     const [rawName,rawType,proCom,rawLat,rawLon]=row;
+     const [rawName,rawType,proCom,municipality,rawLat,rawLon]=row;
      const name=normalizeText(rawName);
+     const parent=normalizeText(municipality);
+     const label=`${name} ${parent}`.trim();
      let rank=99;
      if(name===q)rank=1;
-     else if(name.startsWith(q))rank=3;
-     else if(name.includes(q))rank=5;
+     else if(name.startsWith(q)||label.startsWith(q))rank=3;
+     else if(name.includes(q)||label.includes(q))rank=5;
      if(rank===99)continue;
 
      const lat=Number(rawLat),lon=Number(rawLon),type=Number(rawType);
@@ -255,7 +257,7 @@ function createStaticProvider(){
       haversineKm(lat,lon,Number(place.lat),Number(place.lon))<=15
      );
      if(duplicateMunicipality)continue;
-     localityMatches.push({rank,name:rawName,type,proCom,lat,lon})
+     localityMatches.push({rank,name:rawName,type,proCom,municipality,lat,lon})
     }
    }
 
@@ -266,13 +268,8 @@ function createStaticProvider(){
    localityMatches.sort((a,b)=>a.rank-b.rank
     ||a.type-b.type
     ||String(a.name).localeCompare(String(b.name),'it')
+    ||String(a.municipality).localeCompare(String(b.municipality),'it')
     ||String(a.proCom).localeCompare(String(b.proCom)));
-
-   const duplicateNames=new Map();
-   for(const item of localityMatches){
-    const key=normalizeText(item.name);
-    duplicateNames.set(key,(duplicateNames.get(key)||0)+1)
-   }
 
    const ranked=[
     ...municipalityMatches.map(({rank,place})=>({
@@ -290,12 +287,11 @@ function createStaticProvider(){
      const kind=item.type===2
       ?(italian?'nucleo abitato':'inhabited nucleus')
       :(italian?'località':'locality');
-     const repeated=(duplicateNames.get(normalizeText(item.name))||0)>1;
-     const suffix=repeated?` · ${kind} (${item.proCom})`:` · ${kind}`;
+     const parent=item.municipality?` — ${item.municipality}`:` (${item.proCom})`;
      return{
       rank:item.rank,
       result:{
-       display_name:`${item.name}${suffix}`,
+       display_name:`${item.name}${parent} · ${kind}`,
        lat:item.lat,
        lon:item.lon,
        type:'locality',

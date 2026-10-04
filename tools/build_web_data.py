@@ -22,9 +22,13 @@ from istat_localities import (
     ISTAT_LOCALITIES_LICENSE_URL,
     ISTAT_LOCALITIES_REFERENCE_YEAR,
     ISTAT_LOCALITIES_URL,
+    ISTAT_MUNICIPALITIES_2021_URL,
     LocalityError,
+    attach_municipality_names,
     download_localities,
+    download_municipalities_2021,
     parse_localities_archive,
+    parse_municipalities_2021_archive,
 )
 
 SUPPORTED_FUELS = ("Benzina", "Gasolio", "GPL", "Metano")
@@ -444,21 +448,45 @@ def load_sources(args, repo_root: Path):
 
 def load_locality_source(args):
     if args.localities_file:
+        if not args.municipalities_2021_file:
+            raise BuildError(
+                "Pass --municipalities-2021-file with --localities-file so "
+                "2021 PRO_COM codes can be resolved against the same vintage"
+            )
         blob = Path(args.localities_file).expanduser().read_bytes()
+        municipalities_blob = (
+            Path(args.municipalities_2021_file).expanduser().read_bytes()
+        )
     elif args.download_localities:
+        if args.municipalities_2021_file:
+            raise BuildError(
+                "--municipalities-2021-file is only used with --localities-file"
+            )
         blob = download_localities()
+        municipalities_blob = download_municipalities_2021()
     else:
+        if args.municipalities_2021_file:
+            raise BuildError(
+                "--municipalities-2021-file requires --localities-file"
+            )
         return None
 
     try:
         rows = parse_localities_archive(blob)
+        municipalities = parse_municipalities_2021_archive(municipalities_blob)
+        rows = attach_municipality_names(rows, municipalities)
     except LocalityError as exc:
         raise BuildError(str(exc)) from exc
     if len(rows) < 50_000:
         raise BuildError(
             f"ISTAT residential-locality count {len(rows):,} is unexpectedly small"
         )
-    return {"blob": blob, "rows": rows}
+    return {
+        "blob": blob,
+        "municipalities_blob": municipalities_blob,
+        "municipality_count": len(municipalities),
+        "rows": rows,
+    }
 
 
 def build(args) -> dict:
@@ -503,7 +531,7 @@ def build(args) -> dict:
             {
                 "schema_version": SCHEMA_VERSION,
                 "reference_year": ISTAT_LOCALITIES_REFERENCE_YEAR,
-                "fields": ["name", "type", "pro_com", "lat", "lon"],
+                "fields": ["name", "type", "pro_com", "municipality", "lat", "lon"],
                 "localities": locality_source["rows"],
             },
         )
@@ -534,6 +562,15 @@ def build(args) -> dict:
             ISTAT_LOCALITIES_REFERENCE_YEAR if locality_source else None
         ),
         "source_url": ISTAT_LOCALITIES_URL if locality_source else None,
+        "municipality_source_url": (
+            ISTAT_MUNICIPALITIES_2021_URL if locality_source else None
+        ),
+        "municipality_count": (
+            locality_source["municipality_count"] if locality_source else 0
+        ),
+        "municipality_reference_date": (
+            "2021-12-31" if locality_source else None
+        ),
         "license": ISTAT_LOCALITIES_LICENSE if locality_source else None,
         "license_url": ISTAT_LOCALITIES_LICENSE_URL if locality_source else None,
     }
@@ -541,6 +578,10 @@ def build(args) -> dict:
         source_files["localities"] = {
             "bytes": len(locality_source["blob"]),
             "sha256": sha256(locality_source["blob"]),
+        }
+        source_files["municipalities_2021"] = {
+            "bytes": len(locality_source["municipalities_blob"]),
+            "sha256": sha256(locality_source["municipalities_blob"]),
         }
 
     metadata = {
@@ -590,7 +631,8 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--price-file", help="Use this cached MIMIT price CSV instead of downloading.")
     localities = ap.add_mutually_exclusive_group()
     localities.add_argument("--localities-file", help="Use this cached ISTAT LocalitaPuntuali_21.zip for static locality search.")
-    localities.add_argument("--download-localities", action="store_true", help="Download the official ISTAT 2021 point-locality archive and build localities.json.")
+    localities.add_argument("--download-localities", action="store_true", help="Download the official ISTAT 2021 point-locality and 31-Dec-2021 municipality archives and build localities.json.")
+    ap.add_argument("--municipalities-2021-file", help="Cached ISTAT Limiti2021_g.zip; required with --localities-file for same-vintage municipality labels.")
     ap.add_argument("--history-state", help="Previous rolling-history JSON state; missing path starts fresh.")
     ap.add_argument("--history-state-output", help="Write updated rolling-history state here and generate public 7-day history.")
     return ap
