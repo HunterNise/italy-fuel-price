@@ -21,7 +21,10 @@ jobs:
           python-version: "3.13"
 
       - name: Compile Python sources
-        run: python -m compileall -q station_map analysis/scripts
+        run: python -m compileall -q station_map analysis/scripts tools tests
 
       - name: Check station-map version command
         run: python station_map/serve_map.py --version
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -p "test_*.py" -v
