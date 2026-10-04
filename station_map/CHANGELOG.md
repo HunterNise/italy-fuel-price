@@ -11,6 +11,16 @@ history**. The earlier `v1`…`v8` ZIP names were development labels rather than
 formal semantic-version tags. SemVer becomes the canonical station-map version
 scheme from 0.8.2 onward.
 
+## [0.9.4] - 2026-10-04
+
+### Added
+- Added a validated GitHub Pages deployment workflow that builds live public data, checks static/local station parity, assembles the allowlisted site, and deploys the Pages artifact.
+- Added a source-bundle helper so the data build and parity check use the exact same downloaded MIMIT/ISTAT snapshot files.
+
+### Changed
+- Pages artifact upload explicitly includes generated dotfiles such as `.nojekyll` and the site-build manifest.
+- The first feature-branch deployment uses a narrow workflow-file push bootstrap because manual `workflow_dispatch` is only available after the workflow exists on the default branch.
+
 ## [0.9.3] - 2026-10-04
 
 ### Added

@@ -35,9 +35,10 @@ The repository contains two related components:
 ## Repository status
 
 The local Python/SQLite station map remains the working application. Repository
-CI, the validated static-data builder, the browser static-data provider, and an
-allowlisted static-site assembler are implemented. GitHub Pages deployment is
-the next integration step.
+CI, validated static-data generation, static/local parity checks, allowlisted
+site assembly, and a first GitHub Pages deployment workflow are implemented.
+Rolling public history persistence and scheduled refresh remain deployment
+follow-up work.
 
 ## Data sources and licensing
 

@@ -1,0 +1,91 @@
+name: Deploy Pages
+
+on:
+  workflow_dispatch:
+  # Bootstrap only: workflow_dispatch is not available until this file exists on
+  # the default branch. This narrow trigger lets the feature branch prove one
+  # real Pages deployment; remove it before the final merge.
+  push:
+    branches:
+      - feat/static-provider
+    paths:
+      - ".github/workflows/pages.yml"
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Run repository checks
+        run: |
+          python -m compileall -q station_map analysis/scripts tools tests
+          python station_map/serve_map.py --version
+          python -m unittest discover -s tests -p "test_*.py" -v
+
+      - name: Download one source snapshot bundle
+        run: |
+          python tools/fetch_web_sources.py \
+            --output _build/sources
+
+      - name: Build validated static data
+        run: |
+          python tools/build_web_data.py \
+            --output _build/data \
+            --registry-file _build/sources/anagrafica_impianti_attivi.csv \
+            --price-file _build/sources/prezzo_alle_8.csv \
+            --localities-file _build/sources/LocalitaPuntuali_21.zip \
+            --municipalities-2021-file _build/sources/Limiti2021_g.zip \
+            --history-state-output _build/history-state.json
+
+      - name: Check static/local parity
+        run: |
+          python tools/check_static_parity.py \
+            --registry-file _build/sources/anagrafica_impianti_attivi.csv \
+            --price-file _build/sources/prezzo_alle_8.csv \
+            --data-dir _build/data
+
+      - name: Assemble allowlisted Pages site
+        run: |
+          python tools/build_static_site.py \
+            --data-dir _build/data \
+            --output _site
+          cat _site/.italy-fuel-pages-build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+          include-hidden-files: true
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

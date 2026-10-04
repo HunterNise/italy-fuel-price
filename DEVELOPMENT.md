@@ -99,6 +99,37 @@ timestamp, observed date, fuel/service mode, and rounded distance.
 The network-independent unit suite also contains synthetic cross-cell parity
 cases, so boundary regressions fail normal repository checks.
 
+## Deploy GitHub Pages
+
+The Pages workflow is `.github/workflows/pages.yml`. Before its first deployment,
+configure the repository once in GitHub:
+
+1. Open **Settings → Pages**.
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+3. If a `github-pages` environment already exists with branch restrictions,
+   allow the current verification branch temporarily. After the final merge,
+   restrict deployment to `main`.
+
+A deployment run:
+
+1. runs the network-independent repository checks;
+2. downloads one coherent MIMIT/ISTAT source bundle;
+3. generates validated static data from those cached files;
+4. runs real-snapshot static/local parity against the same MIMIT inputs;
+5. assembles the allowlisted site;
+6. uploads the GitHub Pages artifact, including generated dotfiles;
+7. deploys it through the `github-pages` environment.
+
+`workflow_dispatch` is the intended steady-state trigger. GitHub only permits
+manual dispatch after the workflow file exists on the default branch, so the
+pre-merge workflow temporarily contains a path-filtered push bootstrap for
+`feat/static-provider`. Remove that bootstrap before merging the deployment work
+to `main`.
+
+The first deployment starts rolling public history from the current snapshot.
+Cross-run history persistence and scheduled refreshes are intentionally separate
+follow-up work.
+
 ## Analysis toolkit
 
 Create an environment when the analysis dependencies are needed:

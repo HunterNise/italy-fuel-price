@@ -100,6 +100,7 @@ Repository-level static-data generation is implemented in:
 tools/build_web_data.py          validated static-data builder
 tools/build_static_site.py       allowlisted Pages-site assembler
 tools/check_static_parity.py     static/local current-query parity checker
+tools/fetch_web_sources.py       coherent deployment source-bundle downloader
 tests/test_build_web_data.py     builder/grid/history tests
 tests/test_build_static_site.py  site allowlist/safety tests
 tests/test_static_parity.py      synthetic cross-cell parity tests
@@ -143,8 +144,28 @@ representative national probes plus populated 0.5° cell-edge probes and compare
 the complete normalized result tuples. Synthetic cross-cell cases run in the
 normal unit suite.
 
-The GitHub Pages deployment workflow is not yet implemented. Planned work
-belongs in [`ROADMAP.md`](../ROADMAP.md).
+## GitHub Pages deployment
+
+`.github/workflows/pages.yml` builds and deploys the public Pages artifact. A
+single source bundle is downloaded first; the static-data builder and
+static/local parity checker then consume those exact cached files before the
+allowlisted site is assembled and uploaded.
+
+The build job uses read-only repository/Pages access. The separate deployment
+job receives only the `pages: write` and OIDC `id-token: write` permissions
+required by GitHub Pages. The uploaded artifact explicitly includes hidden
+generated site files such as `.nojekyll`.
+
+The current first-deployment workflow keeps rolling-history state only for that
+workflow run, so the public seven-day axis is seeded by the current snapshot but
+is not yet accumulated across Actions runs. Persistent rolling history and
+scheduled refreshes remain planned work in [`ROADMAP.md`](../ROADMAP.md).
+
+While this feature branch is being verified, the workflow contains a narrow
+push bootstrap that matches only changes to the workflow file on
+`feat/static-provider`. This exists because GitHub only exposes
+`workflow_dispatch` after the workflow file is present on the default branch;
+the bootstrap must be removed before the final merge.
 
 ## Architecture boundary
 
