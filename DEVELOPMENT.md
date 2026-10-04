@@ -57,6 +57,28 @@ python3 tools/build_web_data.py \
 Generated web data and rolling-history state are build artifacts and are not
 committed.
 
+## Assemble the static Pages site
+
+After generating public web data, assemble the deployable site with:
+
+```bash
+python3 tools/build_static_site.py \
+  --data-dir /tmp/italy-fuel-web-data \
+  --output /tmp/italy-fuel-pages-site
+```
+
+Preview the exact assembled artifact locally:
+
+```bash
+python3 -m http.server 8765 --directory /tmp/italy-fuel-pages-site
+```
+
+The site assembler uses an explicit frontend/data allowlist, generates the
+static runtime configuration, writes `.nojekyll`, and rejects unexpected files
+instead of copying the whole `station_map/` tree.
+
+The assembled site is a build artifact and is not committed.
+
 ## Analysis toolkit
 
 Create an environment when the analysis dependencies are needed:

@@ -11,6 +11,16 @@ history**. The earlier `v1`…`v8` ZIP names were development labels rather than
 formal semantic-version tags. SemVer becomes the canonical station-map version
 scheme from 0.8.2 onward.
 
+## [0.9.3] - 2026-10-04
+
+### Added
+- Added an allowlisted static-site assembler for the GitHub Pages artifact.
+- Added validation that generated public data contain exactly the files declared by their metadata.
+
+### Changed
+- Static-site builds generate the static browser runtime configuration and `.nojekyll` instead of copying the tracked local runtime configuration.
+- Site assembly now rejects unexpected generated-data files and private/source artifact types before publication.
+
 ## [0.9.2] - 2026-10-04
 
 ### Added

@@ -98,7 +98,9 @@ Repository-level static-data generation is implemented in:
 
 ```text
 tools/build_web_data.py          validated static-data builder
+tools/build_static_site.py       allowlisted Pages-site assembler
 tests/test_build_web_data.py     builder/grid/history tests
+tests/test_build_static_site.py  site allowlist/safety tests
 .github/workflows/check.yml      network-independent repository checks
 ```
 
@@ -119,8 +121,22 @@ Current generated-data decisions are:
 Generated web datasets, raw downloaded CSVs, and rolling-history state are build
 artifacts rather than source-controlled files.
 
-The allowlisted static-site assembly and GitHub Pages deployment workflow are
-not yet implemented. Planned work belongs in [`ROADMAP.md`](../ROADMAP.md).
+## Static-site assembly
+
+`tools/build_static_site.py` assembles the deployable browser site from an
+explicit allowlist. It copies only `index.html`, the browser application/provider
+files, vendored Leaflet public assets, and the generated JSON files declared by
+the static-data metadata.
+
+The assembler generates a static-mode `runtime-config.js`, writes `.nojekyll`,
+checks that the browser asset cache-busting version matches
+`fuelmap/version.py`, and rejects unexpected generated-data files. Python source,
+SQLite databases, raw CSV/ZIP inputs, local cache/data directories, and rolling
+history state are therefore outside the Pages artifact by construction rather
+than by a broad copy followed by exclusions.
+
+The GitHub Pages deployment workflow is not yet implemented. Planned work
+belongs in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Architecture boundary
 

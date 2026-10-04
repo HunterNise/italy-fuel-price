@@ -35,9 +35,9 @@ The repository contains two related components:
 ## Repository status
 
 The local Python/SQLite station map remains the working application. Repository
-CI, the validated static-data builder, and the browser static-data provider are
-implemented. Static-site assembly and GitHub Pages deployment are the next
-integration steps.
+CI, the validated static-data builder, the browser static-data provider, and an
+allowlisted static-site assembler are implemented. GitHub Pages deployment is
+the next integration step.
 
 ## Data sources and licensing
 

@@ -7,9 +7,6 @@ separate from changelogs and current-state architecture documents.
 
 Near-term work:
 
-- Assemble an allowlisted Pages artifact containing only public HTML/CSS/JS,
-  vendored Leaflet assets, generated runtime configuration, and generated
-  public data.
 - Add focused static-vs-local parity checks for representative station queries
   and grid-boundary cases.
 - Add the Pages deployment workflow with validation, manual dispatch, rolling
