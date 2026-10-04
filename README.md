@@ -1,61 +1,44 @@
 # Italy Fuel Price
 
-Tools for exploring and analysing Italian road-fuel prices using official public
-data.
+Tools for exploring and analysing Italian road-fuel prices using public data,
+with a preference for primary and official sources.
 
-The repository currently contains two related projects:
+The repository contains two related components:
 
 - [`station_map/`](station_map/) — an interactive local map of current Italian
-  fuel-station prices using the MIMIT station registry and daily price snapshot.
+  fuel-station prices and local station history.
 - [`analysis/`](analysis/) — a reproducible toolkit for national and historical
   fuel-price analysis and price decomposition.
 
-## Station map
+## Start here
 
-Start the local application with:
-
-```bash
-./station_map/run.sh
-```
-
-Then open:
-
-```text
-http://127.0.0.1:8000
-```
-
-The map downloads current MIMIT data into local runtime storage. Its `data/` and
-`cache/` directories are intentionally not tracked by Git.
-See [`station_map/README.md`](station_map/README.md) for usage, history support,
-and implementation details.
-
-## Analysis toolkit
-
-Create an environment and install its dependencies:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r analysis/requirements.txt
-```
-
-Examples and data notes are documented in
-[`analysis/README.md`](analysis/README.md).
+- [`DEVELOPMENT.md`](DEVELOPMENT.md) — build, run, test, branch, and release
+  workflow.
+- [`station_map/README.md`](station_map/README.md) — current station-map usage.
+- [`analysis/README.md`](analysis/README.md) — analysis toolkit usage and data
+  semantics.
+- [`ROADMAP.md`](ROADMAP.md) — future ideas and planned work.
+- [`DATA_SOURCES_AND_LICENSES.md`](DATA_SOURCES_AND_LICENSES.md) — data
+  provenance, attribution, and third-party licensing.
 
 ## Data principles
 
-- Prefer official MIMIT/MASE sources.
-- Keep observed and derived values distinguishable.
+- Prefer primary and official sources when available.
+- Keep observed/official, curated, derived, and secondary values
+  distinguishable.
 - Do not silently interpolate missing observations.
-- Treat current station snapshots as replaceable data rather than repository
-  source files.
+- Treat current station snapshots as replaceable runtime/build data rather than
+  repository source files.
 
 ## Repository status
 
-The station map currently runs as a local Python application.
-A static web deployment using GitHub Actions and GitHub Pages is planned, but is
-not yet part of the repository.
+The local station map is the working application. Repository CI and the
+validated static-data builder are in place as foundations for a GitHub Pages
+deployment; the static browser provider and Pages deployment workflow are not
+yet connected.
 
 ## Data sources and licensing
 
-Official source data and third-party material have their own provenance and reuse terms. See [`DATA_SOURCES_AND_LICENSES.md`](DATA_SOURCES_AND_LICENSES.md) for MIMIT/MASE source notes, OpenStreetMap attribution, Leaflet licensing, and the boundary between public generated data and local runtime state.
+Project code is released under the [MIT License](LICENSE).
+
+Official source data and third-party material have their own provenance and reuse terms, see [`DATA_SOURCES_AND_LICENSES.md`](DATA_SOURCES_AND_LICENSES.md).

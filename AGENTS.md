@@ -3,7 +3,7 @@
 ## Mission
 
 Maintain tools for transparent exploration and analysis of Italian road-fuel
-prices using official public data.
+prices using public data.
 
 The repository has two related components:
 
@@ -15,35 +15,38 @@ abstractions.
 
 ## Project principles
 
-- Prefer official (MIMIT and MASE) data sources.
+- Prefer primary and official sources when available.
+- Preserve source provenance and keep official/observed, curated, derived, and
+  secondary values distinguishable.
 - Do not silently interpolate or manufacture missing observations.
-- Keep observed, curated, and derived values distinguishable.
 - Keep calculations and filtering behavior transparent to the user.
-- Do not commit station-map runtime data from `station_map/data/` or
-  `station_map/cache/`.
-- Preserve the local application while static/GitHub Pages support is developed;
-  do not make one deployment mode depend unnecessarily on the other.
+- Keep generated/runtime data out of source control.
+- Preserve the local station-map application while static deployment support is
+  developed; neither deployment mode should unnecessarily depend on the other.
 - Avoid architectural expansion until a concrete feature requires it.
 - Preserve English/Italian UI behavior when changing user-facing map features.
 
 ## Required routing
 
 Before repository work, read [`.agents/README.md`](.agents/README.md) and follow
-the applicable instructions.
+every instruction file routed by that index.
 
-For read-only tasks, inspect the relevant source and documentation before
-drawing conclusions.
+The routed instructions are mandatory. If applicable instructions conflict,
+stop and report the conflict instead of silently choosing one.
+
+For read-only tasks, inspect the relevant source and authoritative documentation
+before drawing conclusions.
 
 Do not modify repository files, Git history, remotes, or GitHub state unless the
 user has requested the corresponding change.
 
-For non-trivial design or architectural changes, explain the proposed direction
-and tradeoffs before implementation unless the user has already explicitly
-approved that design.
+Documentation ownership and routing are defined in
+[`.agents/documentation.md`](.agents/documentation.md); do not duplicate those
+rules here.
 
 ## Handoffs
 
-Report the concrete outcome first: what changed, what was verified, and any
+Lead with the concrete outcome. Report what changed, what was verified, and any
 meaningful limitation or next decision.
 
 Do not narrate routine commands or claim checks that were not actually run.

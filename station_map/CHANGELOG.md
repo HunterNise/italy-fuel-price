@@ -1,17 +1,15 @@
 # Changelog
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
-the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+the station map uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-The releases below **0.8.2 are reconstructed from the iterative development
+This file records effective station-map version history. Git tags are reserved
+for selected stable milestones and do not need to exist for every entry.
+
+The versions below **0.8.2 are reconstructed from the iterative development
 history**. The earlier `v1`…`v8` ZIP names were development labels rather than
-formal semantic-version tags. Semver becomes the canonical version scheme from
-0.8.2 onward.
-
-## [Unreleased]
-
-### Planned
-- Evaluate route-aware fuel-stop planning without coupling it to the station-map core.
+formal semantic-version tags. SemVer becomes the canonical station-map version
+scheme from 0.8.2 onward.
 
 ## [0.8.11] - 2026-10-03
 

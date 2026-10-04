@@ -5,9 +5,9 @@
 A local interactive map for Italian fuel-station prices using official MIMIT
 station and price data.
 
-## Start
+## Run
 
-From any directory:
+From the repository root:
 
 ```bash
 ./station_map/run.sh
@@ -27,12 +27,15 @@ Check the installed version:
 python3 station_map/serve_map.py --version
 ```
 
-## Project structure
+Repository-wide build/test and development commands are documented in
+[`DEVELOPMENT.md`](../DEVELOPMENT.md).
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the backend/frontend split, storage
-invariants and extension points.
+## Structure and storage
 
-The important persistent path is:
+See [`ARCHITECTURE.md`](ARCHITECTURE.md) for module responsibilities and the
+current static-data build boundary.
+
+The important persistent local path is:
 
 ```text
 data/station_history.sqlite
@@ -41,15 +44,16 @@ data/station_history.sqlite
 The `cache/` directory is disposable. Code-only upgrades should leave both
 `data/` and `cache/` alone unless a migration explicitly says otherwise.
 
-## Data model
+The local data model includes:
 
-- `stations`: current station registry and coordinates.
-- `current_prices`: latest nationwide MIMIT snapshot only.
-- `tracked_stations`: stations in areas you have viewed.
-- `prices`: retained local history for tracked stations plus explicit archive imports.
+- `stations`: current station registry and coordinates;
+- `current_prices`: latest nationwide MIMIT snapshot only;
+- `tracked_stations`: stations in areas you have viewed;
+- `prices`: retained local history for tracked stations plus explicit archive
+  imports;
 - `sync_state`: latest sync metadata.
 
-No missing history is silently interpolated.
+Missing history is never silently interpolated.
 
 ## Current sync
 
@@ -63,7 +67,8 @@ The server can also refresh periodically:
 python3 station_map/serve_map.py --auto-sync-hours 6
 ```
 
-Repeated syncs of the same official snapshot date do not create duplicate history days.
+Repeated syncs of the same official snapshot date do not create duplicate
+history days.
 
 ## Historical archives
 
@@ -79,100 +84,34 @@ Inspect stored history:
 python3 station_map/history_index.py coverage
 ```
 
-## Versioning
-
-The project follows semantic versioning from **0.8.2** onward.
-
-- patch (`0.8.x`): fixes/refactors without changing expected user workflows;
-- minor (`0.x.0`): new functionality or a meaningful behavior/data-model change;
-- `1.0.0`: reserved for a stable public interface/configuration and mature upgrade path.
-
-See [CHANGELOG.md](CHANGELOG.md) for the reconstructed earlier milestones and
-future releases.
-
-## UI state and compact view
+## Current UI behavior
 
 The browser remembers the selected location/centre, fuel, service mode, search
-radius, fill size, freshness, ranking sort/limit and panel collapsed states.
+radius, fill size, freshness, ranking sort/limit, optional price/distance
+filters, and panel collapsed states.
 
-The collapsed top panel is a compact screenshot-oriented context card. It keeps
-the location plus fuel/service/radius/freshness/fill summary, with the
-language/help/expand controls underneath.
+`Show` controls the display limit (`all`, `50`, `25`, `10`) for the map,
+ranking, and histogram together. Maximum price and maximum distance are separate
+combinable constraints in the Filters popover.
 
-`Show` is the single station-visibility control. Its default is `all`; selecting
-50, 25 or 10 limits the **ranking, map markers and histogram together** according
-to the current sort order.
+The processing order is:
 
-Price labels are automatic: they remain permanently visible at closer zoom
-levels or when no more than 12 stations are shown; otherwise they appear on
-hover.
+```text
+radius/fuel/mode/freshness
+  → optional filters
+  → sort
+  → Show
+  → map + ranking + histogram
+```
 
-The `⛶` button in the map navigation cluster centres the selected search point
-and chooses the tightest zoom that fits the complete radius circle in the map
-viewport.
+Clicking a marker or ranking row selects the same station in both views. Price
+labels become persistent at closer zoom levels or when only a small number of
+stations is shown. The `⛶` control centres the selected search point and fits
+the complete active radius.
 
-Clicking a marker or ranking row selects the same station in both views. The
-selected map marker is brought above nearby markers and receives a subtle halo.
+## Version history
 
+[`CHANGELOG.md`](CHANGELOG.md) records effective station-map version history.
+Future work belongs in [`ROADMAP.md`](../ROADMAP.md).
 
-## 0.8.5 request-handling fix
-
-Browser reloads or rapidly superseded map requests can close an HTTP socket after
-the local server has already finished the station query. These disconnects are
-now ignored as normal client cancellation rather than logged as backend 502
-errors. Identical station requests are also deduplicated while in flight.
-
-## UI caching
-
-From 0.8.6 onward the local server sends the application shell and local static
-assets with `Cache-Control: no-store`.  It also ignores conditional browser cache
-headers for those paths, and the HTML references CSS/JS with a versioned query
-string.
-
-This is intentionally separate from UI preferences: fuel, radius, location,
-sort, panel state, and related choices remain in browser `localStorage`.  The
-application code itself is not retained there.
-
-
-## 0.8.7 UI notes
-
-The compact context card now uses two summary lines. The first contains location,
-fuel, service mode and radius; the second contains freshness, stale-price count
-and fill size.
-
-`Show` remains the single visibility authority for the map, ranking and
-histogram. In addition to `all`, `50`, `25` and `10`, it now supports:
-
-* **max price** — a dynamic €/L slider;
-* **max distance** — a dynamic straight-line km slider bounded by the active
-  search radius.
-
-The Leaflet distance scale is positioned immediately above the bottom-left price
-legend.
-
-
-## 0.8.8 UI note
-
-The summary chips (shown station count, stale-hidden count, minimum, median and
-maximum price) are visible in the expanded top panel only. The collapsed context
-card remains compact and shows only its two-line context summary.
-
-
-## 0.8.9 filtering and compact-view notes
-
-The compact context card now uses three lines: location; fuel/mode/radius/fill; freshness/stale/shown.
-
-The map footer uses a custom distance scale directly above the price legend. `Show` controls only the display limit (`all`, `50`, `25`, `10`). Maximum price and maximum distance are separate, combinable constraints in the **Filters** popover.
-
-The processing order is `radius/fuel/mode/freshness -> optional filters -> sort -> Show -> map + ranking + histogram`.
-
-
-## 0.8.10 final UI polish
-
-The collapsed context card now uses shrink-to-fit sizing rather than a fixed
-width, while restoring more comfortable vertical padding and spacing.
-
-In the expanded top panel, the data-source subtitle sits beside the title.
-
-The ranking header keeps Sort, Show and Filters on one control row; Filters is
-separated visually but remains part of the same compact control group.
+The map's machine-readable version source is `fuelmap/version.py`.
