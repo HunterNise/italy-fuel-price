@@ -82,22 +82,36 @@ git switch -c feat/<short-name>
 Use concise prefixes such as `feat/`, `fix/`, `ci/`, `docs/`, or `refactor/`.
 There is no permanent `develop` branch.
 
-Keep commits reviewable and use a pull request for substantial work. Merge after
-the `Checks` workflow passes.
+Keep commits reviewable and merge only after the branch `Checks` workflow
+passes.
 
-Prefer rebase-and-merge when a branch contains several intentionally separated
-commits. Squash only when the intermediate branch commits have no lasting
-review/revert value.
+Pull requests are optional. Use one when the consolidated GitHub review,
+discussion, or merge UI is useful. For straightforward solo work, a reviewed
+and green short-lived branch may be fast-forwarded directly into `main`.
+
+Prefer a fast-forward merge when `main` has not diverged. If `main` has moved,
+rebase the feature branch onto the latest `main`, rerun checks, then
+fast-forward it.
 
 ## Version and tag workflow
 
 Semantic Versioning currently applies to the station map. The analysis toolkit
 does not have an independent release lifecycle.
 
-The authoritative station-map version is
-`station_map/fuelmap/version.py`. The changelog records effective map version
-history, but Git tags are reserved for selected stable milestones rather than
-every changelog entry.
+The authoritative station-map version is `station_map/fuelmap/version.py`.
+
+The station-map version is a lightweight working milestone rather than a formal
+release gate.
+
+A bounded application change that produces a meaningful working state may bump
+the version and add a concise human-readable changelog entry.
+
+Documentation-only, repository-maintenance, test-only, CI-only, and internal
+changes normally do not bump the application version or add a feature changelog
+entry.
+
+Git tags are reserved for selected stable milestones and do not need to exist
+for every application version.
 
 Use descriptive component-prefixed tag names when useful. For example, the
 stable local milestone before static deployment work is:
