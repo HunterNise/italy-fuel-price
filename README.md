@@ -38,8 +38,10 @@ The local Python/SQLite station map remains the working application. Repository
 CI, validated static-data generation, static/local parity checks, allowlisted
 site assembly, GitHub Pages deployment, rolling seven-day public history state
 persistence, a timezone-aware daily refresh schedule, and visible public
-snapshot freshness status are implemented. Final deployment-branch cleanup
-remains follow-up work.
+snapshot freshness status are implemented.
+
+The public station map is available at
+<https://hunternise.github.io/italy-fuel-price/>.
 
 ## Data sources and licensing
 

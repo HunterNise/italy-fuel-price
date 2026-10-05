@@ -101,14 +101,12 @@ cases, so boundary regressions fail normal repository checks.
 
 ## Deploy GitHub Pages
 
-The Pages workflow is `.github/workflows/pages.yml`. Before its first deployment,
-configure the repository once in GitHub:
+The Pages workflow is `.github/workflows/pages.yml`. Repository setup is:
 
 1. Open **Settings → Pages**.
 2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
-3. If a `github-pages` environment already exists with branch restrictions,
-   allow the current verification branch temporarily. After the final merge,
-   restrict deployment to `main`.
+3. In **Settings → Environments → github-pages**, restrict deployment branches
+   to `main`.
 
 A deployment run:
 
@@ -132,11 +130,8 @@ schedule:
     timezone: "Europe/Rome"
 ```
 
-GitHub scheduled workflows run from the latest commit on the default branch, so
-the daily trigger is inactive while this workflow exists only on
-`feat/static-provider`. The pre-merge workflow temporarily keeps a path-filtered
-push bootstrap for that feature branch; remove the bootstrap before merging the
-deployment work to `main`.
+GitHub scheduled workflows run from the latest commit on the default branch.
+For this repository that is `main`; feature-branch pushes do not deploy Pages.
 
 The 09:15 Rome time is deliberately away from the top of the hour. The first
 publication measurement on 2026-10-05 showed the price snapshot switching
@@ -149,7 +144,8 @@ restored on later distinct workflow runs. The state file is not committed and
 is not included in the Pages site. A GitHub **rerun** is not a valid persistence
 test because prior-attempt artifacts from that same workflow run are not
 reliably available to the new attempt; verify restoration with a separate later
-workflow run instead.
+workflow run instead. Manual operator refreshes should use **Run workflow** so
+they create a new workflow run.
 
 Since this is a public repository, do not place secrets or user-private data in
 the history artifact; the current state contains only derived public MIMIT

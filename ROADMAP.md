@@ -7,8 +7,6 @@ separate from changelogs and current-state architecture documents.
 
 Near-term work:
 
-- Remove the temporary feature-branch deployment bootstrap before the final
-  merge; keep manual dispatch as the steady-state operator trigger.
 - Continue measuring morning source publication timing; adjust the 09:15
   Europe/Rome schedule or add a fallback only if multiple days justify it.
 
@@ -24,6 +22,9 @@ Possible follow-up work:
 
 ## Later ideas
 
+- Revisit a combined self-service + served display as a UI/QoL feature. A
+  correct design should represent both offers in the same station popup/card
+  and avoid relying on unclickable overlapping map markers.
 - Evaluate route-aware fuel-stop planning as a separate service/module if a
   concrete trip-planning workflow justifies the routing provider and
   detour/vehicle-cost assumptions.
