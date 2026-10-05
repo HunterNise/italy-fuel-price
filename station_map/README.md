@@ -1,6 +1,6 @@
 # Italy live station-price map
 
-**Version 0.9.6**
+**Version 0.9.7**
 
 A local interactive map for Italian fuel-station prices using official MIMIT
 station and price data.

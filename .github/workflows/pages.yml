@@ -6,8 +6,8 @@ on:
     - cron: "15 9 * * *"
       timezone: "Europe/Rome"
   # Bootstrap only: scheduled workflows and workflow_dispatch require this file
-  # on the default branch. This narrow trigger lets the feature branch prove
-  # real Pages deployments; remove it before the final merge.
+  # on the default branch. Keep this through the public stale-status preview,
+  # then remove it before the final merge.
   push:
     branches:
       - feat/static-provider

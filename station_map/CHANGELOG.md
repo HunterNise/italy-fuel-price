@@ -11,6 +11,15 @@ history**. The earlier `v1`…`v8` ZIP names were development labels rather than
 formal semantic-version tags. SemVer becomes the canonical station-map version
 scheme from 0.8.2 onward.
 
+## [0.9.7] - 2026-10-05
+
+### Added
+- Added a visible public-snapshot health badge to the static map status line.
+
+### Changed
+- Static snapshots dated today or yesterday in Europe/Rome are marked current; snapshots two or more calendar days behind are marked stale with their age.
+- Changing the UI language now re-renders the loaded snapshot status immediately.
+
 ## [0.9.6] - 2026-10-05
 
 ### Added

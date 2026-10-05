@@ -37,8 +37,9 @@ The repository contains two related components:
 The local Python/SQLite station map remains the working application. Repository
 CI, validated static-data generation, static/local parity checks, allowlisted
 site assembly, GitHub Pages deployment, rolling seven-day public history state
-persistence, and a timezone-aware daily refresh schedule are implemented.
-Stale-data status and final deployment-branch cleanup remain follow-up work.
+persistence, a timezone-aware daily refresh schedule, and visible public
+snapshot freshness status are implemented. Final deployment-branch cleanup
+remains follow-up work.
 
 ## Data sources and licensing
 

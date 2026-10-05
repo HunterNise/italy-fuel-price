@@ -155,6 +155,11 @@ Since this is a public repository, do not place secrets or user-private data in
 the history artifact; the current state contains only derived public MIMIT
 snapshots.
 
+The public static UI labels the loaded price snapshot as current when its
+official date is today or yesterday in `Europe/Rome`. It displays a stale badge
+when the snapshot is two or more calendar days behind. This is intentionally
+separate from the per-station price-freshness filter.
+
 ## Analysis toolkit
 
 Create an environment when the analysis dependencies are needed:

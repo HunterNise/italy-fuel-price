@@ -90,7 +90,11 @@ are resolved against ISTAT's 31 December 2021 municipality layer so parent
 municipality labels use the same territorial vintage as the locality data.
 
 The UI reads provider capabilities: unsupported sync controls are hidden and
-history buttons reflect the provider's available day windows.
+history buttons reflect the provider's available day windows. In static mode,
+the main snapshot status also compares the MIMIT `price_date` with the current
+calendar date in `Europe/Rome`: today/yesterday is shown as current, while two
+or more days behind is visibly marked stale. This makes a missed deployment or
+old upstream snapshot visible without changing the local-mode status behavior.
 
 ## Static-data build
 

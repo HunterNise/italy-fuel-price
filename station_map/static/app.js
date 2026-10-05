@@ -23,7 +23,7 @@ const I18N={
   localHistory:'local history',publicHistory:'public history',snapshotDays:'snapshot days',tracked:'tracked stations',syncing:'Downloading the official current MIMIT snapshot…',
   syncDone:'Current snapshot synchronized',searchNoResults:'No places found.',searching:'Searching…',searchError:'Location search failed',
   loading:'Loading locally joined MIMIT snapshot…',loadingStatic:'Loading generated public station data…',syncFailed:'Sync failed',freshnessUnknown:'freshness unknown',less1:'<1 day old',
-  oneDay:'1 day old',daysOld:'{n} days old',stale:'stale',belowMedian:'{c}¢/L below median',aboveMedian:'{c}¢/L above median',
+  oneDay:'1 day old',daysOld:'{n} days old',stale:'stale',snapshotCurrent:'current',snapshotStale:'stale · {n} days old',belowMedian:'{c}¢/L below median',aboveMedian:'{c}¢/L above median',
   medianPrice:'median price',cheaperThan:'cheaper than {p}% of visible stations',lowest:'lowest price in current set',highest:'highest price in current set',
   saveFill:'save {v} / {l} L',aboveFill:'{v} above median / {l} L',atMedian:'at local median',
   savingFooter:'Savings use the median of all {n} freshness-filtered stations for a {l} L fill. Driving/detour cost is not included.',
@@ -49,7 +49,7 @@ const I18N={
   localHistory:'storico locale',publicHistory:'storico pubblico',snapshotDays:'giorni snapshot',tracked:'impianti tracciati',syncing:'Scarico lo snapshot MIMIT attuale…',
   syncDone:'Snapshot attuale sincronizzato',searchNoResults:'Nessuna località trovata.',searching:'Ricerca…',searchError:'Ricerca località fallita',
   loading:'Carico lo snapshot MIMIT unito in locale…',loadingStatic:'Carico i dati pubblici generati degli impianti…',syncFailed:'Sincronizzazione fallita',freshnessUnknown:'freschezza sconosciuta',less1:'meno di 1 giorno',
-  oneDay:'1 giorno fa',daysOld:'{n} giorni fa',stale:'vecchio',belowMedian:'{c}¢/L sotto la mediana',aboveMedian:'{c}¢/L sopra la mediana',
+  oneDay:'1 giorno fa',daysOld:'{n} giorni fa',stale:'vecchio',snapshotCurrent:'aggiornato',snapshotStale:'vecchio · {n} giorni fa',belowMedian:'{c}¢/L sotto la mediana',aboveMedian:'{c}¢/L sopra la mediana',
   medianPrice:'prezzo mediano',cheaperThan:'più economico del {p}% delle stazioni visibili',lowest:'prezzo più basso del gruppo',highest:'prezzo più alto del gruppo',
   saveFill:'risparmi {v} / {l} L',aboveFill:'{v} sopra mediana / {l} L',atMedian:'alla mediana locale',
   savingFooter:'Il risparmio usa la mediana di tutte le {n} stazioni filtrate per freschezza, per un rifornimento di {l} L. Il costo della deviazione non è incluso.',
@@ -193,7 +193,8 @@ function applyLanguage(){
  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>el.placeholder=T(el.dataset.i18nPlaceholder));
  $('langToggle').innerHTML=flagSVG(lang)+`<span>${lang.toUpperCase()}</span>`;
  if($('fitRadiusNav')){$('fitRadiusNav').title=T('fitRadius');$('fitRadiusNav').setAttribute('aria-label',T('fitRadius'))}
- localStorage.setItem('fuelMapLang',lang);updateCollapsedSummary();render()
+ localStorage.setItem('fuelMapLang',lang);updateCollapsedSummary();render();
+ if(lastServerState&&lastServerState.price_date)renderStationStatus(lastServerState)
 }
 
 const map=L.map('map',{zoomControl:false}).setView([current.lat,current.lon],Number(prefs.zoom)||13);
@@ -237,6 +238,32 @@ function parseMimitDate(s){
  if(m){const [,d,mo,y,h='0',mi='0',sec='0']=m;return new Date(+y,+mo-1,+d,+h,+mi,+sec)}const d=new Date(x);return Number.isNaN(+d)?null:d
 }
 function stationAgeDays(s){const d=parseMimitDate(s.updated)||parseMimitDate(s.observed_date);return d?Math.max(0,(Date.now()-d.getTime())/86400000):null}
+function romeCalendarDate(now=new Date()){
+ const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
+ const values=Object.fromEntries(parts.map(part=>[part.type,part.value]));
+ return `${values.year}-${values.month}-${values.day}`
+}
+function isoCalendarAgeDays(dateText,todayText=romeCalendarDate()){
+ const source=String(dateText||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+ const today=String(todayText||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+ if(!source||!today)return null;
+ const sourceMs=Date.UTC(+source[1],+source[2]-1,+source[3]);
+ const todayMs=Date.UTC(+today[1],+today[2]-1,+today[3]);
+ return Math.max(0,Math.round((todayMs-sourceMs)/86400000))
+}
+function staticSnapshotBadge(priceDate){
+ if(DATA.mode!=='static')return'';
+ const age=isoCalendarAgeDays(priceDate);
+ if(age==null)return'';
+ if(age<=1)return`<span class="snapshot-health current">${T('snapshotCurrent')}</span>`;
+ return`<span class="snapshot-health stale">${T('snapshotStale',{n:age})}</span>`
+}
+function renderStationStatus(d){
+ if(!d||!d.price_date)return;
+ $('status').innerHTML=DATA.mode==='static'
+  ?`${T('snapshot')} <b>${esc(d.price_date)}</b> ${staticSnapshotBadge(d.price_date)} · ${T('registry')} ${esc(d.registry_date)} · ${T('publicHistory')}: ${d.history_days||0} ${T('snapshotDays')}`
+  :`${T('snapshot')} <b>${esc(d.price_date)}</b> · ${T('registry')} ${esc(d.registry_date)} · ${T('localHistory')}: ${d.history_days||0} ${T('snapshotDays')} · ${d.tracked_station_rows||0} ${T('tracked')}`+(d.warning?`<br/><span class="warn">${esc(d.warning)}</span>`:'')
+}
 function ageText(days){if(days==null||!Number.isFinite(days))return T('freshnessUnknown');if(days<1)return T('less1');if(days<2)return T('oneDay');return T('daysOld',{n:Math.floor(days)})}
 function ageClass(days){if(days==null)return'mid';if(days<=1)return'good';if(days<=3)return'mid';return'old'}
 function activeStations(){const raw=$('maxAgeDays').value;if(raw==='all')return stations;const max=+raw;return stations.filter(s=>{const a=stationAgeDays(s);return a!=null&&a<=max})}
@@ -425,10 +452,7 @@ async function loadStations(){
   try{
    const d=await DATA.getStations({lat:current.lat,lon:current.lon,radius,fuel,self});
    if(seq!==requestSeq)return;
-   stations=d.stations||[];lastServerState=d;render();
-   $('status').innerHTML=DATA.mode==='static'
-    ?`${T('snapshot')} <b>${esc(d.price_date)}</b> · ${T('registry')} ${esc(d.registry_date)} · ${T('publicHistory')}: ${d.history_days||0} ${T('snapshotDays')}`
-    :`${T('snapshot')} <b>${esc(d.price_date)}</b> · ${T('registry')} ${esc(d.registry_date)} · ${T('localHistory')}: ${d.history_days||0} ${T('snapshotDays')} · ${d.tracked_station_rows||0} ${T('tracked')}`+(d.warning?`<br/><span class="warn">${esc(d.warning)}</span>`:'');
+   stations=d.stations||[];lastServerState=d;render();renderStationStatus(d);
    persistPrefs();
   }catch(e){
    if(seq!==requestSeq)return;

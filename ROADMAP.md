@@ -11,8 +11,6 @@ Near-term work:
   merge; keep manual dispatch as the steady-state operator trigger.
 - Continue measuring morning source publication timing; adjust the 09:15
   Europe/Rome schedule or add a fallback only if multiple days justify it.
-- Make stale-data status visible when the upstream snapshot or scheduled
-  deployment has not refreshed.
 
 ## Analysis and trends
 
