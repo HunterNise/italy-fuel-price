@@ -124,19 +124,36 @@ A deployment run:
 8. uploads the GitHub Pages artifact, including generated dotfiles;
 9. deploys it through the `github-pages` environment.
 
-`workflow_dispatch` is the intended steady-state trigger. GitHub only permits
-manual dispatch after the workflow file exists on the default branch, so the
-pre-merge workflow temporarily contains a path-filtered push bootstrap for
-`feat/static-provider`. Remove that bootstrap before merging the deployment work
-to `main`.
+The steady-state triggers are manual dispatch plus one daily schedule:
+
+```yaml
+schedule:
+  - cron: "15 9 * * *"
+    timezone: "Europe/Rome"
+```
+
+GitHub scheduled workflows run from the latest commit on the default branch, so
+the daily trigger is inactive while this workflow exists only on
+`feat/static-provider`. The pre-merge workflow temporarily keeps a path-filtered
+push bootstrap for that feature branch; remove the bootstrap before merging the
+deployment work to `main`.
+
+The 09:15 Rome time is deliberately away from the top of the hour. The first
+publication measurement on 2026-10-05 showed the price snapshot switching
+between 08:40 and 08:50 and the registry switching between 08:50 and 09:00,
+with both stable from 09:00 onward. Keep collecting measurements before adding a
+fallback schedule.
 
 Rolling public history is stored only as a GitHub Actions artifact and is
-restored on later workflow runs. The state file is not committed and is not
-included in the Pages site. Since this is a public repository, do not place
-secrets or user-private data in that artifact; the current state contains only
-derived public MIMIT snapshots.
+restored on later distinct workflow runs. The state file is not committed and
+is not included in the Pages site. A GitHub **rerun** is not a valid persistence
+test because prior-attempt artifacts from that same workflow run are not
+reliably available to the new attempt; verify restoration with a separate later
+workflow run instead.
 
-Scheduled refresh timing remains a separate follow-up.
+Since this is a public repository, do not place secrets or user-private data in
+the history artifact; the current state contains only derived public MIMIT
+snapshots.
 
 ## Analysis toolkit
 

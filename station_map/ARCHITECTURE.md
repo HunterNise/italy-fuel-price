@@ -168,13 +168,20 @@ The state is never copied into `_site` and is never committed.
 Because this is a public repository, Actions artifacts must be treated as
 non-sensitive rather than secret storage. The retained state contains only
 derived public MIMIT snapshot data, so that visibility is acceptable here.
-Scheduled refreshes remain planned work in [`ROADMAP.md`](../ROADMAP.md).
+
+The workflow defines one daily refresh at 09:15 in the `Europe/Rome` timezone.
+GitHub applies the schedule only from the default branch, so this scheduled
+trigger becomes active when the workflow reaches `main`. The initial timing
+choice follows the 2026-10-05 publication sample, where the price file changed
+between 08:40 and 08:50 Rome and the registry caught up between 08:50 and
+09:00. There is no fallback run yet; later measurements can justify moving the
+time or adding a fallback if needed.
 
 While this feature branch is being verified, the workflow contains a narrow
 push bootstrap that matches only changes to the workflow file on
-`feat/static-provider`. This exists because GitHub only exposes
-`workflow_dispatch` after the workflow file is present on the default branch;
-the bootstrap must be removed before the final merge.
+`feat/static-provider`. Scheduled workflows and manual dispatch depend on the
+workflow being present on the default branch; the bootstrap must be removed
+before the final merge.
 
 ## Architecture boundary
 

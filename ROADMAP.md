@@ -9,8 +9,8 @@ Near-term work:
 
 - Remove the temporary feature-branch deployment bootstrap before the final
   merge; keep manual dispatch as the steady-state operator trigger.
-- Measure actual morning source publication timing and keep a fallback schedule
-  only if the data justify it.
+- Continue measuring morning source publication timing; adjust the 09:15
+  Europe/Rome schedule or add a fallback only if multiple days justify it.
 - Make stale-data status visible when the upstream snapshot or scheduled
   deployment has not refreshed.
 

@@ -11,6 +11,15 @@ history**. The earlier `v1`…`v8` ZIP names were development labels rather than
 formal semantic-version tags. SemVer becomes the canonical station-map version
 scheme from 0.8.2 onward.
 
+## [0.9.6] - 2026-10-05
+
+### Added
+- Added a daily GitHub Pages refresh schedule at 09:15 Europe/Rome with DST-aware timezone handling.
+
+### Changed
+- Documented that scheduled Pages runs execute from the default branch, so the schedule becomes active when the deployment workflow reaches `main`.
+- Clarified that workflow reruns are not a valid test of cross-run history-artifact restoration; restoration is verified by a distinct later workflow run.
+
 ## [0.9.5] - 2026-10-05
 
 ### Added

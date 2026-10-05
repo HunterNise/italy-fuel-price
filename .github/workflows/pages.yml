@@ -2,9 +2,12 @@ name: Deploy Pages
 
 on:
   workflow_dispatch:
-  # Bootstrap only: workflow_dispatch is not available until this file exists on
-  # the default branch. This narrow trigger lets the feature branch prove real
-  # Pages deployments; remove it before the final merge.
+  schedule:
+    - cron: "15 9 * * *"
+      timezone: "Europe/Rome"
+  # Bootstrap only: scheduled workflows and workflow_dispatch require this file
+  # on the default branch. This narrow trigger lets the feature branch prove
+  # real Pages deployments; remove it before the final merge.
   push:
     branches:
       - feat/static-provider
