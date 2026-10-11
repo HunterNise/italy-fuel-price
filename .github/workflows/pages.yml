@@ -110,3 +110,20 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  keepalive:
+    if: ${{ always() }}
+    needs:
+      - build
+      - deploy
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+
+    steps:
+      - name: Refresh scheduled-workflow active state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl             --fail-with-body             --silent             --show-error             --retry 3             --retry-delay 5             --retry-max-time 30             --request PUT             --header "Accept: application/vnd.github+json"             --header "Authorization: Bearer $GH_TOKEN"             --header "X-GitHub-Api-Version: 2026-03-10"             "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/workflows/pages.yml/enable"
+          echo "Refreshed Deploy Pages workflow active state."

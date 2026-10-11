@@ -86,6 +86,11 @@ on narrow screens instead of only compressing the desktop layout.
   timely daily publication becomes operationally important, evaluate a small
   external scheduler that dispatches the existing workflow rather than moving
   the source-time target later.
+- Keep the scheduled Pages workflow active without synthetic commits by calling
+  GitHub's workflow-enable API from the workflow's separate keepalive job.
+  Treat this as a pragmatic mitigation for the public-repository 60-day
+  inactivity rule; if GitHub still disables the schedule, fall back to manual
+  re-enable or an external dispatcher.
 - Consider rejecting a new public deployment when registry and price snapshots
   have inconsistent source dates, leaving the previous known-good deployment
   active instead of publishing a mixed-vintage snapshot.

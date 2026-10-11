@@ -147,6 +147,19 @@ GitHub `schedule` delivery is best-effort and can be delayed independently of
 source publication. Use **Run workflow** for an operator refresh when a timely
 deployment matters.
 
+Public repositories can have scheduled workflows automatically disabled after
+60 days without repository activity. The Pages workflow therefore has a
+separate `keepalive` job that calls GitHub's official **Enable a workflow** REST
+endpoint for `pages.yml` after every scheduled or manually dispatched run. The
+job uses the built-in `GITHUB_TOKEN` with `actions: write`, creates no commits,
+and is guarded with `always()` so a failed build/deploy does not skip the
+keepalive attempt.
+
+This is a pragmatic mitigation rather than a documented guarantee that enabling
+an already-active workflow resets GitHub's inactivity timer. If GitHub still
+auto-disables the schedule, re-enable it manually and use an external scheduler
+to dispatch the existing workflow if unattended operation is required.
+
 Rolling public history is stored only as a GitHub Actions artifact and is
 restored on later distinct workflow runs. The state file is not committed and
 is not included in the Pages site. A GitHub **rerun** is not a valid persistence
