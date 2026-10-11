@@ -6,7 +6,7 @@
 <title>MIMIT fuel prices</title>
 <link rel="icon" href="data:,"/>
 <link rel="stylesheet" href="./static/vendor/leaflet/leaflet.css"/>
-<link rel="stylesheet" href="./static/styles.css?v=0.9.8"/>
+<link rel="stylesheet" href="./static/styles.css?v=0.10.0"/>
 </head>
 <body>
 <div id="map"></div>
@@ -105,10 +105,16 @@
       <div class="filter-actions"><button class="small-btn" id="filterReset" type="button" data-i18n="resetFilters">Reset filters</button></div>
     </div>
     <div class="active-filter-chips" id="activeFilterChips"></div>
-    <div class="dist-box">
-      <div class="dist-head"><span class="dist-title" data-i18n="distribution">Current price distribution</span><span class="dist-spread" id="distSpread"></span></div>
-      <div class="dist-note" id="distNote"></div>
-      <div id="distChart"></div>
+    <div class="dist-box" id="distBox">
+      <div class="dist-head">
+        <button class="dist-toggle" id="distToggle" type="button" aria-expanded="false" aria-controls="distBody"><span data-i18n="distribution">Current price distribution</span><span class="dist-toggle-icon" aria-hidden="true">⌄</span></button>
+        <span class="dist-title" data-i18n="distribution">Current price distribution</span>
+        <span class="dist-spread" id="distSpread"></span>
+      </div>
+      <div class="dist-body" id="distBody">
+        <div class="dist-note" id="distNote"></div>
+        <div id="distChart"></div>
+      </div>
     </div>
   </div>
   <section id="mobileStationDetail" class="mobile-detail" hidden aria-live="polite"></section>
@@ -169,8 +175,8 @@
 </div>
 
 <script src="./static/vendor/leaflet/leaflet.js"></script>
-<script src="./static/runtime-config.js?v=0.9.8"></script>
-<script src="./static/data-provider.js?v=0.9.8"></script>
-<script src="./static/app.js?v=0.9.8"></script>
+<script src="./static/runtime-config.js?v=0.10.0"></script>
+<script src="./static/data-provider.js?v=0.10.0"></script>
+<script src="./static/app.js?v=0.10.0"></script>
 </body>
 </html>

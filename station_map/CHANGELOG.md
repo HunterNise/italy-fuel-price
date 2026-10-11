@@ -11,14 +11,21 @@ history**. The earlier `v1`…`v8` ZIP names were development labels rather than
 formal semantic-version tags. SemVer becomes the canonical station-map version
 scheme from 0.8.2 onward.
 
-## [0.9.8] - 2026-10-11
+## [0.10.0] - 2026-10-11
+
+### Added
+- Added an explicit tap-driven mobile results/detail state: station selection on narrow screens now opens details inside the lower sheet instead of a competing Leaflet popup.
+- Added a mobile-only expandable price-distribution section, collapsed by default so ranking rows receive most of the lower-sheet space.
 
 ### Changed
-- Added an explicit tap-driven mobile results/detail state: station selection on narrow screens now opens details inside the lower sheet instead of a competing Leaflet popup.
-- Mobile bottom-sheet controls now keep stable bottom-screen placement, use phone-safe-area spacing, and expose larger touch targets.
-- Desktop marker popup behavior remains unchanged.
+- Mobile station details temporarily compact the top controls and restore the user's prior state when detail mode closes.
+- Mobile results prioritize interactive content by hiding secondary ranking explanation/footer text, shortening top snapshot/stat information, and compacting ranking rows.
+- Narrow-screen map chrome now uses a compact relative-price legend plus only fit-radius and recenter controls; pan and zoom remain native touch gestures.
+- Mobile bottom-sheet controls keep stable bottom-screen placement, use phone-safe-area spacing, and expose larger touch targets.
+- Desktop marker popup, ranking, histogram, navigation-pad, status, and statistics behavior remain unchanged.
 
 ### Fixed
+- Prevented station-marker clicks from bubbling into the map click handler, so tapping a mobile marker opens its station detail instead of immediately relocating/reloading the search.
 - Fixed the phone interaction where selecting a station while the lower panel was docked could make the top controls effectively inaccessible and leave the panel control unusable.
 - Reduced narrow-screen top-panel whitespace and prevented the reopen control from jumping to the upper-right corner.
 

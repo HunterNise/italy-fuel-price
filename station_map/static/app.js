@@ -142,6 +142,7 @@ let center=null,radiusCircle=null,stations=[],shownStations=[],requestSeq=0,mark
 let filterPriceEnabled=!!prefs.filterPriceEnabled,filterDistanceEnabled=!!prefs.filterDistanceEnabled;
 let filterMaxPrice=Number.isFinite(Number(prefs.filterMaxPrice))?Number(prefs.filterMaxPrice):null;
 let filterMaxDistance=Number.isFinite(Number(prefs.filterMaxDistance))?Number(prefs.filterMaxDistance):null;
+let mobileControlsBeforeDetail=null,mobileDistributionOpen=false;
 
 function T(key,vars={}){
  let s=(I18N[lang]&&I18N[lang][key])||I18N.en[key]||key;
@@ -264,6 +265,10 @@ function staticSnapshotBadge(priceDate){
 }
 function renderStationStatus(d){
  if(!d||!d.price_date)return;
+ const compact=DATA.mode==='static'
+  ?`${T('snapshot')} <b>${esc(d.price_date)}</b> ${staticSnapshotBadge(d.price_date)} · ${T('registry')} ${esc(d.registry_date)}`
+  :`${T('snapshot')} <b>${esc(d.price_date)}</b> · ${T('registry')} ${esc(d.registry_date)}`+(d.warning?`<br/><span class="warn">${esc(d.warning)}</span>`:'');
+ if(isMobileLayout()){$('status').innerHTML=compact;return}
  $('status').innerHTML=DATA.mode==='static'
   ?`${T('snapshot')} <b>${esc(d.price_date)}</b> ${staticSnapshotBadge(d.price_date)} · ${T('registry')} ${esc(d.registry_date)} · ${T('publicHistory')}: ${d.history_days||0} ${T('snapshotDays')}`
   :`${T('snapshot')} <b>${esc(d.price_date)}</b> · ${T('registry')} ${esc(d.registry_date)} · ${T('localHistory')}: ${d.history_days||0} ${T('snapshotDays')} · ${d.tracked_station_rows||0} ${T('tracked')}`+(d.warning?`<br/><span class="warn">${esc(d.warning)}</span>`:'')
@@ -336,10 +341,14 @@ function popupHtml(s){
  const historyHtml=DATA.capabilities.history&&historyDays.length?`<div class="history-head"><b>${T('historyFast')}</b><span class="history-btns">${historyDays.map(days=>`<button data-days="${days}">${days}d</button>`).join('')}</span></div><div id="${key}" data-history-id="${esc(s.id)}" data-fuel="${esc(s.fuel)}" data-self="${s.isSelf?1:0}"></div>`:'';
  return`<div class="popup-price">${fmt(s.price)}</div><div><b>${esc(s.fuel)}</b> · ${s.isSelf?T('self'):T('served')} · ${T('distanceKm',{n:s.distance_km.toFixed(1)})}</div><div class="popup-meta">${T('station')} ${esc(s.id)}<br/>${esc(s.address)}<br/>${T('snapshot')}: ${esc(s.observed_date)}${s.updated?`<br/>${T('communicated')}: ${esc(s.updated)}`:''}<br/><span class="fresh ${ageClass(stationAgeDays(s))}">${ageText(stationAgeDays(s))}</span></div>${historyHtml}`
 }
-function closeMobileStationDetail(){
+function closeMobileStationDetail({restoreControls=true}={}){
  const detail=$('mobileStationDetail');if(!detail)return;
  detail.hidden=true;detail.innerHTML='';
  document.body.classList.remove('mobile-detail-open');
+ if(restoreControls&&mobileControlsBeforeDetail!==null){
+  setControlCollapsed(mobileControlsBeforeDetail,false);
+  mobileControlsBeforeDetail=null
+ }
  resizeMapSoon()
 }
 function renderMobileStationDetail(){
@@ -358,6 +367,10 @@ function renderMobileStationDetail(){
 function openMobileStationDetail(id,{pan=true}={}){
  selectedStationId=id==null?null:String(id);
  setSidebarCollapsed(false,false);
+ if(mobileControlsBeforeDetail===null){
+  mobileControlsBeforeDetail=$('controlBody').classList.contains('collapsed');
+  setControlCollapsed(true,false)
+ }
  applySelectionStyles(true);
  const marker=markerById.get(String(id));
  if(marker&&pan)map.panTo(marker.getLatLng(),{animate:true});
@@ -367,12 +380,22 @@ function openStation(id){
  if(isMobileLayout()){openMobileStationDetail(id,{pan:true});return}
  selectStation(id,{pan:true,openPopup:true,scrollRank:true})
 }
+function updateDistributionState(){
+ const box=$('distBox'),toggle=$('distToggle');
+ if(!box||!toggle)return;
+ const expanded=!isMobileLayout()||mobileDistributionOpen;
+ box.classList.toggle('is-open',isMobileLayout()&&mobileDistributionOpen);
+ toggle.setAttribute('aria-expanded',String(expanded));
+ const icon=toggle.querySelector('.dist-toggle-icon');
+ if(icon)icon.textContent=mobileDistributionOpen?'⌃':'⌄'
+}
 function updateResponsiveControls(){
  const mobile=isMobileLayout();
  $('hideSidebar').textContent=mobile?'⌄':'›';
  $('showSidebar').textContent=mobile?'⌃':'‹';
  $('hideSidebar').title=T('hidePanel');$('hideSidebar').setAttribute('aria-label',T('hidePanel'));
  $('showSidebar').title=T('showResults');$('showSidebar').setAttribute('aria-label',T('showResults'));
+ updateDistributionState()
 }
 
 
@@ -449,7 +472,7 @@ function render(){
  if(selectedStationId!=null&&!visible.some(s=>String(s.id)===String(selectedStationId))){selectedStationId=null;closeMobileStationDetail()}
 
  visible.forEach(s=>{
-  const marker=L.circleMarker([s.lat,s.lon],{radius:9,color:'#222',weight:.8,fillColor:markerColor(s.price,lo,hi),fillOpacity:.95}).addTo(layer);
+  const marker=L.circleMarker([s.lat,s.lon],{radius:9,color:'#222',weight:.8,fillColor:markerColor(s.price,lo,hi),fillOpacity:.95,bubblingMouseEvents:false}).addTo(layer);
   marker._station=s;
   markerById.set(String(s.id),marker);
   if(isMobileLayout()){
@@ -478,12 +501,12 @@ function render(){
    : T('shownOf',{shown:visible.length,total:filtered.length});
 
  $('stats').innerHTML=values.length
-   ? `<span class="stat">${shownLabel}</span>
-      ${lastHiddenStale?`<span class="stat">${lastHiddenStale} ${T('hiddenStale')}</span>`:''}
-      <span class="stat">${T('min')} ${fmt(values[0])}</span>
-      <span class="stat">${T('median')} ${fmt(shownMedian)}</span>
-      <span class="stat">${T('max')} ${fmt(values.at(-1))}</span>`
-   : `<span class="stat">0 ${T('stations')}</span>`;
+   ? `<span class="stat stat-primary">${shownLabel}</span>
+      ${lastHiddenStale?`<span class="stat stat-stale">${lastHiddenStale} ${T('hiddenStale')}</span>`:''}
+      <span class="stat stat-price">${T('min')} ${fmt(values[0])}</span>
+      <span class="stat stat-price">${T('median')} ${fmt(shownMedian)}</span>
+      <span class="stat stat-price">${T('max')} ${fmt(values.at(-1))}</span>`
+   : `<span class="stat stat-primary">0 ${T('stations')}</span>`;
 
  renderRanking(visible,filtered,referenceMedian);
  applySelectionStyles(false);
@@ -538,6 +561,7 @@ function bindEvents(){
  $('fuel').addEventListener('change',()=>{persistPrefs();loadStations()});$('mode').addEventListener('change',()=>{persistPrefs();loadStations()});$('maxAgeDays').addEventListener('change',()=>{persistPrefs();render()});
  $('refresh').addEventListener('click',loadStations);if(DATA.capabilities.sync)$('sync').addEventListener('click',syncNow);$('locate').addEventListener('click',useLocation);$('rankSort').addEventListener('change',()=>{persistPrefs();render()});$('rankLimit').addEventListener('change',()=>{persistPrefs();render()});
  $('filterToggle').addEventListener('click',()=>{$('filterPopover').hidden=!$('filterPopover').hidden});
+ $('distToggle').addEventListener('click',()=>{mobileDistributionOpen=!mobileDistributionOpen;updateDistributionState()});
  $('filterPriceEnabled').addEventListener('change',()=>{filterPriceEnabled=$('filterPriceEnabled').checked;persistPrefs();render()});
  $('filterDistanceEnabled').addEventListener('change',()=>{filterDistanceEnabled=$('filterDistanceEnabled').checked;persistPrefs();render()});
  $('filterPriceSlider').addEventListener('input',()=>{filterMaxPrice=+$('filterPriceSlider').value;filterPriceEnabled=true;$('filterPriceEnabled').checked=true;persistPrefs();render()});
@@ -546,11 +570,11 @@ function bindEvents(){
  $('searchForm').addEventListener('submit',e=>{e.preventDefault();const q=$('locationSearch').value.trim();if(q)searchLocation(q)});
  $('langToggle').addEventListener('click',()=>{lang=lang==='en'?'it':'en';applyLanguage()});
  $('helpBtn').addEventListener('click',()=>$('helpModal').classList.add('show'));$('closeHelp').addEventListener('click',()=>$('helpModal').classList.remove('show'));$('helpModal').addEventListener('click',e=>{if(e.target===$('helpModal'))$('helpModal').classList.remove('show')});
- $('collapseControls').addEventListener('click',()=>setControlCollapsed(!$('controlBody').classList.contains('collapsed')));$('hideSidebar').addEventListener('click',()=>setSidebarCollapsed(true));$('showSidebar').addEventListener('click',()=>setSidebarCollapsed(false));
+ $('collapseControls').addEventListener('click',()=>{setControlCollapsed(!$('controlBody').classList.contains('collapsed'));if(document.body.classList.contains('mobile-detail-open'))mobileControlsBeforeDetail=null});$('hideSidebar').addEventListener('click',()=>setSidebarCollapsed(true));$('showSidebar').addEventListener('click',()=>setSidebarCollapsed(false));
  map.on('click',e=>relocate(e.latlng.lat,e.latlng.lng,map.getZoom(),true));map.on('zoomend',()=>{configureAutoLabels(shownStations);updateCustomScale();persistPrefs()});map.on('moveend',updateCustomScale);map.on('resize',updateCustomScale);
  document.addEventListener('keydown',e=>{const tag=(e.target&&e.target.tagName||'').toLowerCase(),typing=tag==='input'||tag==='select'||tag==='textarea';if(e.key==='Escape'){$('helpModal').classList.remove('show');$('searchResults').classList.remove('show');closeMobileStationDetail();map.closePopup();return}if(typing)return;const k=e.key.toLowerCase();if(k==='/'){e.preventDefault();$('locationSearch').focus();return}if(k==='h'||e.key==='?'){$('helpModal').classList.add('show');return}if(k==='r'){loadStations();return}if(k==='l'){useLocation();return}if(e.key==='0'){map.setView([current.lat,current.lon],map.getZoom(),{animate:true});return}if(e.key==='+'||e.key==='='){map.zoomIn();return}if(e.key==='-'){map.zoomOut();return}const keyDir={w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'}[k];if(keyDir){e.preventDefault();pan(keyDir)}});
  document.addEventListener('click',e=>{if(!e.target.closest('.search-row'))$('searchResults').classList.remove('show');if(!e.target.closest('#filterPopover')&&!e.target.closest('#filterToggle'))$('filterPopover').hidden=true})
- MOBILE_LAYOUT.addEventListener('change',()=>{closeMobileStationDetail();updateResponsiveControls();render();resizeMapSoon()})
+ MOBILE_LAYOUT.addEventListener('change',()=>{mobileDistributionOpen=false;closeMobileStationDetail();updateResponsiveControls();render();if(lastServerState&&lastServerState.price_date)renderStationStatus(lastServerState);resizeMapSoon()})
 }
 
 applyPrefs();applyProviderCapabilities();setSearchGeometry(current.lat,current.lon);bindEvents();updateResponsiveControls();applyLanguage();updateCustomScale();loadStations();

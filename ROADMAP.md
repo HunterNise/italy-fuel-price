@@ -15,9 +15,10 @@ on narrow screens instead of only compressing the desktop layout.
 
 ### Mobile interaction model
 
-The initial tap-driven mobile state is implemented in 0.9.8: the lower sheet
-owns either ranking results or station details, desktop popups are preserved,
-and the known station-selection/docking failure is addressed.
+The initial tap-driven mobile redesign is implemented in 0.10.0: the lower
+sheet owns either ranking results or station details, desktop popups are
+preserved, station-marker taps no longer fall through to map relocation, and
+the narrow-screen hierarchy prioritizes controls/results over explanatory copy.
 
 Remaining work:
 
