@@ -6,6 +6,7 @@ import math
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -135,6 +136,38 @@ class ParityTests(unittest.TestCase):
                 [parity.canonical(x) for x in static],
             )
             self.assertEqual([x["id"] for x in static], ["west", "east"])
+
+    def test_compare_probe_ignores_order_only_differences(self):
+        a = {
+            "id": "a",
+            "lat": 41.9,
+            "lon": 12.5,
+            "address": "Via A, Roma, RM",
+            "road_type": "",
+            "price": 1.8,
+            "updated": "04/10/2026 07:30:00",
+            "observed_date": "2026-10-04",
+            "fuel": "Benzina",
+            "isSelf": True,
+            "distance_km": 1.001,
+        }
+        b = {
+            "id": "b",
+            "lat": 41.91,
+            "lon": 12.51,
+            "address": "Via B, Roma, RM",
+            "road_type": "",
+            "price": 1.8,
+            "updated": "04/10/2026 07:30:00",
+            "observed_date": "2026-10-04",
+            "fuel": "Benzina",
+            "isSelf": True,
+            "distance_km": 1.002,
+        }
+        probe = parity.Probe("Roma", 41.9028, 12.4964, 8, "Benzina", True)
+        with mock.patch.object(parity, "direct_results", return_value=[a, b]),              mock.patch.object(parity, "static_results", return_value=[b, a]):
+            result = parity.compare_probe([], [], Path("."), probe, ServicesStub)
+        self.assertEqual(result["stations"], 2)
 
     def test_missing_neighbor_cell_causes_detectable_mismatch(self):
         records = [

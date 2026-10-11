@@ -77,9 +77,15 @@ on narrow screens instead of only compressing the desktop layout.
 
 ## Data reliability and GitHub Pages operations
 
-- Continue measuring morning MIMIT publication timing over several weekdays;
-  adjust the 09:15 Europe/Rome schedule or add a fallback only if repeated
-  observations justify it.
+- Keep 09:15 Europe/Rome as the current source-publication target: the
+  2026-10-05 through 2026-10-11 probe observed prices updated by the 08:50
+  sample and the registry aligned by the 09:00 sample on every measured day.
+  Reopen source-time tuning only if later observations break that pattern.
+- Treat GitHub Actions cron delivery separately from MIMIT publication timing.
+  Scheduled runs are best-effort and have recently been delayed by hours; if
+  timely daily publication becomes operationally important, evaluate a small
+  external scheduler that dispatches the existing workflow rather than moving
+  the source-time target later.
 - Consider rejecting a new public deployment when registry and price snapshots
   have inconsistent source dates, leaving the previous known-good deployment
   active instead of publishing a mixed-vintage snapshot.

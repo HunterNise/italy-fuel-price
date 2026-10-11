@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import importlib.util
 import json
 import math
@@ -86,6 +87,10 @@ def canonical(item: dict) -> tuple:
         bool(item["isSelf"]),
         round(float(item["distance_km"]), 3),
     )
+
+
+def canonical_multiset(items: list[dict]) -> Counter:
+    return Counter(canonical(item) for item in items)
 
 
 def direct_results(
@@ -309,11 +314,11 @@ def compare_probe(
     static = static_results(data_dir, probe, services)
     local_c = [canonical(item) for item in local]
     static_c = [canonical(item) for item in static]
-    if local_c != static_c:
-        local_set = set(local_c)
-        static_set = set(static_c)
-        only_local = sorted(local_set - static_set)[:5]
-        only_static = sorted(static_set - local_set)[:5]
+    local_counts = canonical_multiset(local)
+    static_counts = canonical_multiset(static)
+    if local_counts != static_counts:
+        only_local = sorted((local_counts - static_counts).elements())[:5]
+        only_static = sorted((static_counts - local_counts).elements())[:5]
         raise ParityError(
             f"{probe.name}: parity mismatch "
             f"(local={len(local_c)}, static={len(static_c)}); "

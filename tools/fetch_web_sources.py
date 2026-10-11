@@ -6,6 +6,7 @@ import hashlib
 import json
 import shutil
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -21,6 +22,8 @@ from istat_localities import (
 )
 
 CACHE_MARKER = ".italy-fuel-web-sources.json"
+DOWNLOAD_ATTEMPTS = 3
+RETRY_DELAYS_SECONDS = (5.0, 15.0)
 
 
 class SourceFetchError(RuntimeError):
@@ -51,6 +54,36 @@ def import_mimit(repo_root: Path):
 
 def sha256(blob: bytes) -> str:
     return hashlib.sha256(blob).hexdigest()
+
+
+def download_with_retry(
+    label: str,
+    download_fn,
+    *,
+    attempts: int = DOWNLOAD_ATTEMPTS,
+    delays: tuple[float, ...] = RETRY_DELAYS_SECONDS,
+    sleep_fn=time.sleep,
+) -> bytes:
+    if attempts < 1:
+        raise ValueError("attempts must be >= 1")
+
+    for attempt in range(1, attempts + 1):
+        try:
+            return download_fn()
+        except OSError as exc:
+            if attempt >= attempts:
+                raise SourceFetchError(
+                    f"{label} download failed after {attempts} attempts: {exc}"
+                ) from exc
+            delay = delays[min(attempt - 1, len(delays) - 1)] if delays else 0
+            print(
+                f"{label} download failed (attempt {attempt}/{attempts}): "
+                f"{exc}; retrying in {delay:g}s",
+                file=sys.stderr,
+            )
+            sleep_fn(delay)
+
+    raise AssertionError("unreachable")
 
 
 def prepare_output(path: Path, repo_root: Path) -> Path:
@@ -129,10 +162,18 @@ def fetch(repo_root: Path, output: Path) -> dict:
 
     # Download every upstream object before touching the output directory so a
     # failed request cannot leave a half-new snapshot bundle behind.
-    registry_blob = mimit.download(station_url)
-    price_blob = mimit.download(price_url)
-    locality_blob = download_localities()
-    municipality_blob = download_municipalities_2021()
+    registry_blob = download_with_retry(
+        "MIMIT registry", lambda: mimit.download(station_url)
+    )
+    price_blob = download_with_retry(
+        "MIMIT prices", lambda: mimit.download(price_url)
+    )
+    locality_blob = download_with_retry(
+        "ISTAT localities", download_localities
+    )
+    municipality_blob = download_with_retry(
+        "ISTAT municipalities", download_municipalities_2021
+    )
 
     output = prepare_output(output, repo_root)
     return write_bundle(

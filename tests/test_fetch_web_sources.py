@@ -61,6 +61,45 @@ class SourceBundleTests(unittest.TestCase):
             )
             self.assertEqual(stored["files"], manifest["files"])
 
+    def test_download_with_retry_recovers_after_transient_errors(self):
+        calls = []
+        sleeps = []
+
+        def flaky():
+            calls.append(1)
+            if len(calls) < 3:
+                raise TimeoutError("temporary timeout")
+            return b"ok"
+
+        blob = fetcher.download_with_retry(
+            "test source",
+            flaky,
+            attempts=3,
+            delays=(1.0, 2.0),
+            sleep_fn=sleeps.append,
+        )
+        self.assertEqual(blob, b"ok")
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(sleeps, [1.0, 2.0])
+
+    def test_download_with_retry_fails_after_limit(self):
+        calls = []
+
+        def broken():
+            calls.append(1)
+            raise TimeoutError("still down")
+
+        with self.assertRaises(fetcher.SourceFetchError) as ctx:
+            fetcher.download_with_retry(
+                "test source",
+                broken,
+                attempts=3,
+                delays=(),
+                sleep_fn=lambda _delay: None,
+            )
+        self.assertEqual(len(calls), 3)
+        self.assertIn("after 3 attempts", str(ctx.exception))
+
     def test_prepare_output_refuses_unowned_nonempty_directory(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

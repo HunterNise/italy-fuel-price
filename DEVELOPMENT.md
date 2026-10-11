@@ -92,9 +92,12 @@ python3 tools/check_static_parity.py \
 ```
 
 The checker runs representative national city probes plus automatically derived
-probes on populated 0.5° grid boundaries. It compares full station-result tuples
-including station ID, coordinates, address, road type, price, communication
-timestamp, observed date, fuel/service mode, and rounded distance.
+probes on populated 0.5° grid boundaries. It compares the canonical multiset of
+full station-result tuples including station ID, coordinates, address, road
+type, price, communication timestamp, observed date, fuel/service mode, and
+rounded distance. Result ordering is not itself a parity failure because tiny
+coordinate-rounding differences can legitimately swap equal-price,
+near-equidistant stations without changing the result content.
 
 The network-independent unit suite also contains synthetic cross-cell parity
 cases, so boundary regressions fail normal repository checks.
@@ -133,11 +136,16 @@ schedule:
 GitHub scheduled workflows run from the latest commit on the default branch.
 For this repository that is `main`; feature-branch pushes do not deploy Pages.
 
-The 09:15 Rome time is deliberately away from the top of the hour. The first
-publication measurement on 2026-10-05 showed the price snapshot switching
-between 08:40 and 08:50 and the registry switching between 08:50 and 09:00,
-with both stable from 09:00 onward. Keep collecting measurements before adding a
-fallback schedule.
+The 09:15 Rome time is deliberately away from the top of the hour. Measurements
+from 2026-10-05 through 2026-10-11 consistently observed the price snapshot
+switch between the 08:40 and 08:50 probes and the registry catch up between the
+08:50 and 09:00 probes, with both aligned from 09:00 onward. That seven-day
+sample supports 09:15 as the source-publication target; no second source-time
+fallback is currently justified.
+
+GitHub `schedule` delivery is best-effort and can be delayed independently of
+source publication. Use **Run workflow** for an operator refresh when a timely
+deployment matters.
 
 Rolling public history is stored only as a GitHub Actions artifact and is
 restored on later distinct workflow runs. The state file is not committed and
