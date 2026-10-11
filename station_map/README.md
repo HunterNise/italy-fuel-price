@@ -1,6 +1,6 @@
 # Italy live station-price map
 
-**Version 0.10.0**
+**Version 0.10.1**
 
 A local interactive map for Italian fuel-station prices using official MIMIT
 station and price data.
@@ -121,6 +121,12 @@ gestures are not part of 0.10.0.
 Price labels become persistent at closer zoom levels or when only a small
 number of stations is shown. The `⛶` control centres the selected search point
 and fits the complete active radius.
+
+The `?` button opens a responsive **Help & about** dialog. The Guide tab shows
+touch-specific instructions on narrow screens and keyboard shortcuts on desktop.
+The About tab reports the running app version and provider mode plus the latest
+loaded snapshot/registry dates, generated timestamp when available, refresh
+policy, repository, and primary source/licence links.
 
 ## Version history
 

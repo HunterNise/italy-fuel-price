@@ -11,6 +11,17 @@ history**. The earlier `v1`…`v8` ZIP names were development labels rather than
 formal semantic-version tags. SemVer becomes the canonical station-map version
 scheme from 0.8.2 onward.
 
+## [0.10.1] - 2026-10-11
+
+### Added
+- Reworked the `?` dialog into separate Guide and About tabs.
+- Added live About metadata for application version, local/static provider mode, loaded price/registry dates, static generation time, refresh policy, repository, and primary data/licence links.
+- Added touch-specific mobile guidance while keeping keyboard shortcuts desktop-only.
+
+### Changed
+- Revised map/ranking/station-detail help text to match the 0.10 mobile interaction model and clarify straight-line distance, station freshness, and history semantics.
+- Made the Help/About dialog more compact on phones with a single-column metadata layout.
+
 ## [0.10.0] - 2026-10-11
 
 ### Added

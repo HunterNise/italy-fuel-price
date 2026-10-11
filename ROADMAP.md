@@ -33,19 +33,17 @@ Remaining work:
 
 ### Help and secondary information
 
-- Rework the current Help dialog into a clearer **Help & About** surface.
-- Revise usage instructions so desktop users see keyboard/mouse guidance and
-  mobile users see touch/swipe guidance.
-- Include useful secondary information such as:
-  - application version;
-  - local vs public/static data mode;
-  - price-snapshot and registry dates;
-  - public build/generation time;
-  - normal Pages refresh cadence;
-  - repository link;
-  - primary data-source and licence links.
-- Keep source attribution concise in the interface and link to the repository
-  provenance/licensing documentation for details.
+Implemented in 0.10.1: Help and About are separate tabs, mobile guidance is
+touch-specific, desktop retains keyboard shortcuts, and About exposes the
+running version/provider plus loaded snapshot, registry and generation metadata,
+refresh policy, repository, and concise source/licence links.
+
+Remaining work:
+
+- Keep usage copy synchronized with future gestures, service modes and routing
+  features rather than duplicating detailed documentation in the modal.
+- Consider exposing an exact deployed commit identifier later if the public
+  build manifest makes it available without adding another runtime dependency.
 
 ### Smaller map QoL
 
@@ -95,9 +93,6 @@ Remaining work:
   branch.
 - Consider a service worker/PWA only after static cache/versioning behavior is
   proven sufficiently stable in production.
-- If GitHub's public-repository inactivity rule becomes operationally relevant,
-  add the smallest safe workflow-maintenance mechanism rather than synthetic
-  source commits.
 
 ## Analysis and trends
 

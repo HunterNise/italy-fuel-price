@@ -41,10 +41,13 @@ Responsibilities are separated as follows:
 - `data-provider.js` adapts either local `/api/*` routes or generated static
   data to one browser-facing interface.
 - `app.js` owns browser map behavior, ranking, filtering, history UI,
-  preferences, localization, and responsive interaction state without depending
-  directly on the data source. Desktop station details use Leaflet popups;
-  narrow screens use the ranking area's dedicated station-detail state so only
-  one lower interaction surface owns the phone viewport at a time.
+  preferences, localization, responsive interaction state, and Help/About
+  presentation without depending directly on the data source. Desktop station
+  details use Leaflet popups; narrow screens use the ranking area's dedicated
+  station-detail state so only one lower interaction surface owns the phone
+  viewport at a time. Help/About reads provider mode and the latest station
+  response metadata; static `generated_at` is displayed when available without
+  introducing a second metadata API.
 
 ## Local data invariants
 

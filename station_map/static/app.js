@@ -4,6 +4,7 @@ const PREF_KEY='fuelMapPrefsV4';
 const LEGACY_PREF_KEYS=['fuelMapPrefsV3','fuelMapPrefsV2','fuelMapPrefsV1'];
 const DATA=window.FuelMapData;
 if(!DATA)throw Error('FuelMap data provider is not loaded.');
+const APP_VERSION=(()=>{try{return new URL(document.currentScript.src).searchParams.get('v')||'dev'}catch{return'dev'}})();
 const MOBILE_LAYOUT=window.matchMedia('(max-width: 820px)');
 const isMobileLayout=()=>MOBILE_LAYOUT.matches;
 
@@ -15,12 +16,17 @@ const I18N={
   refresh:'Refresh map',syncCurrent:'Sync current snapshot',myLocation:'Use my location',currentLocation:'Current location',
   ready:'Ready.',bestNearby:'Best prices nearby',rankSubtitle:'Price ranking ignores brands/ratings. Distance is straight-line from the selected point.',
   sort:'Sort',price:'Price',distance:'Distance',savings:'Savings vs median',show:'Show',filters:'Filters',maxPriceLabel:'Max price',maxDistanceLabel:'Max distance',resetFilters:'Reset filters',distribution:'Current price distribution',
-  relativePrice:'Relative price',helpTitle:'Map guide',shortcuts:'Keyboard shortcuts',panNorth:'Pan north',panWest:'Pan west',panSouth:'Pan south',panEast:'Pan east',zoom:'Zoom in / out',recenter:'Recenter',
+  relativePrice:'Relative price',helpTitle:'Help & about',guideTab:'Guide',aboutTab:'About',shortcuts:'Keyboard shortcuts',panNorth:'Pan north',panWest:'Pan west',panSouth:'Pan south',panEast:'Pan east',zoom:'Zoom in / out',recenter:'Recenter',
   focusSearch:'Focus search',close:'Close popup/menu',backToResults:'Back to results',hidePanel:'Hide panel',showResults:'Show results',stationDetails:'Station details',
   guideIntroTitle:'Using the map',guideIntro:'Search for a place, click the map, or use your browser location to choose the centre point. The dashed circle is the active search radius.',
-  guideDataTitle:'Prices and ranking',guideData:'Choose fuel, service mode and freshness. Use Filters for maximum price/distance constraints, then sort the remaining stations and optionally limit the displayed result with Show. Map markers, ranking rows and the histogram always use the same final station subset.',
-  guideReadTitle:'Reading and selecting stations',guideRead:'Click a map marker or ranking row to select the same station in both views. On phones, station details use the lower sheet so they do not compete with the top controls; use Back to return to the ranking. On larger screens, station details open in the map popup. The selected station is brought above nearby markers with a subtle halo.',
-  historyTitle:'History',historyHelp:'The 7/30/90-day views read only dates already stored in the local SQLite database. Sync adds the newest official snapshot only. The current nationwide snapshot is not retained day-by-day; history is kept only for stations in areas you view, so disk use stays small.',historyHelpStatic:'The public map exposes the generated rolling 7-day history. Missing source days remain missing and are never interpolated.',
+  guideDataTitle:'Prices and ranking',guideData:'Choose fuel, service mode and freshness. Filters can limit maximum price and/or straight-line distance. Sort and Show affect the final visible subset used consistently by the map, ranking and price distribution.',
+  guideReadTitle:'Station details',guideRead:'Select a marker or ranking row to focus the same station. Desktop opens a map popup; narrow screens switch the lower sheet from results to station details. History always belongs to the selected fuel and service mode.',
+  touchTitle:'Touch controls',touchHelp:'Drag and pinch the map normally. The lower sheet holds either results or station details: use Back to return to results, Hide to maximize the map, and the bottom-right reopen control to restore results. The price-distribution row expands on tap.',
+  freshnessHelpTitle:'Freshness and history',historyTitle:'History',historyHelp:'Freshness filters each station by its communicated price age. Local history contains only snapshots actually stored for viewed stations; missing days are never interpolated.',historyHelpStatic:'Freshness filters each station by its communicated price age. The public map exposes the generated rolling 7-day history; missing source days remain missing and are never interpolated. Public snapshot health is shown separately in the top status line.',
+  aboutVersionLabel:'Version',aboutModeLabel:'Data mode',aboutSnapshotLabel:'Price snapshot',aboutRegistryLabel:'Station registry',aboutGeneratedLabel:'Generated',aboutRefreshLabel:'Refresh',
+  aboutModeStatic:'Public static snapshot',aboutModeLocal:'Local Python runtime',aboutRefreshStatic:'Scheduled 09:15 Europe/Rome (GitHub Actions; best-effort)',aboutRefreshLocal:'Synchronization is controlled by the local Python server',
+  aboutProjectTitle:'Project',aboutProjectText:'Independent interface built around official Italian public fuel-price data. It is not an official MIMIT service and does not imply endorsement by the source institutions.',
+  repositoryLink:'GitHub repository',sourcesLicencesLink:'Sources & licences',aboutSourcesTitle:'Primary sources',aboutLicenceNote:'MIMIT data: IODL 2.0. ISTAT geographic material: CC BY 4.0. Map tiles/data attribution remains with OpenStreetMap contributors. See Sources & licences for details.',
   stations:'stations',hiddenStale:'hidden as stale',min:'min',median:'median',max:'max',snapshot:'snapshot',registry:'registry',
   localHistory:'local history',publicHistory:'public history',snapshotDays:'snapshot days',tracked:'tracked stations',syncing:'Downloading the official current MIMIT snapshot…',
   syncDone:'Current snapshot synchronized',searchNoResults:'No places found.',searching:'Searching…',searchError:'Location search failed',
@@ -41,12 +47,17 @@ const I18N={
   refresh:'Aggiorna mappa',syncCurrent:'Sincronizza snapshot attuale',myLocation:'La mia posizione',currentLocation:'Posizione attuale',
   ready:'Pronto.',bestNearby:'Migliori prezzi nei dintorni',rankSubtitle:'La classifica ignora marchi/recensioni. La distanza è in linea d’aria dal punto selezionato.',
   sort:'Ordina',price:'Prezzo',distance:'Distanza',savings:'Risparmio vs mediana',show:'Mostra',filters:'Filtri',maxPriceLabel:'Prezzo max',maxDistanceLabel:'Distanza max',resetFilters:'Azzera filtri',distribution:'Distribuzione prezzi attuale',
-  relativePrice:'Prezzo relativo',helpTitle:'Guida mappa',shortcuts:'Scorciatoie da tastiera',panNorth:'Sposta a nord',panWest:'Sposta a ovest',panSouth:'Sposta a sud',panEast:'Sposta a est',zoom:'Zoom avanti / indietro',recenter:'Ricentra',
+  relativePrice:'Prezzo relativo',helpTitle:'Guida e informazioni',guideTab:'Guida',aboutTab:'Info',shortcuts:'Scorciatoie da tastiera',panNorth:'Sposta a nord',panWest:'Sposta a ovest',panSouth:'Sposta a sud',panEast:'Sposta a est',zoom:'Zoom avanti / indietro',recenter:'Ricentra',
   focusSearch:'Vai alla ricerca',close:'Chiudi popup/menu',backToResults:'Torna ai risultati',hidePanel:'Nascondi pannello',showResults:'Mostra risultati',stationDetails:'Dettagli impianto',
   guideIntroTitle:'Come usare la mappa',guideIntro:'Cerca una località, clicca sulla mappa oppure usa la posizione del browser per scegliere il punto centrale. Il cerchio tratteggiato è il raggio di ricerca attivo.',
-  guideDataTitle:'Prezzi e classifica',guideData:'Scegli carburante, modalità di servizio e freschezza. Usa Filtri per applicare limiti massimi di prezzo e/o distanza, poi ordina le stazioni rimanenti e limita eventualmente il risultato con Mostra. Marker, righe e istogramma usano sempre lo stesso sottoinsieme finale.',
-  guideReadTitle:'Lettura e selezione delle stazioni',guideRead:'Clicca un marker o una riga della classifica per selezionare lo stesso impianto in entrambe le viste. Su telefono i dettagli usano il pannello inferiore, così non competono con i controlli superiori; usa Indietro per tornare alla classifica. Su schermi più grandi i dettagli restano nel popup della mappa. La stazione selezionata viene portata sopra i marker vicini con un alone discreto.',
-  historyTitle:'Storico',historyHelp:'Le viste 7/30/90 giorni leggono solo le date già presenti nel database SQLite locale. La sincronizzazione aggiunge soltanto lo snapshot ufficiale più recente. Lo snapshot nazionale corrente non viene conservato giorno per giorno: lo storico viene mantenuto solo per gli impianti nelle aree che consulti, così lo spazio occupato resta ridotto.',historyHelpStatic:'La mappa pubblica espone lo storico mobile generato di 7 giorni. I giorni mancanti nella fonte restano mancanti e non vengono mai interpolati.',
+  guideDataTitle:'Prezzi e classifica',guideData:'Scegli carburante, modalità di servizio e freschezza. I Filtri possono limitare il prezzo massimo e/o la distanza in linea d’aria. Ordina e Mostra agiscono sul sottoinsieme finale usato in modo coerente da mappa, classifica e distribuzione prezzi.',
+  guideReadTitle:'Dettagli impianto',guideRead:'Seleziona un marker o una riga della classifica per mettere a fuoco lo stesso impianto. Su desktop si apre il popup della mappa; su schermi stretti il pannello inferiore passa dai risultati ai dettagli. Lo storico resta sempre associato al carburante e alla modalità di servizio selezionati.',
+  touchTitle:'Comandi touch',touchHelp:'Trascina la mappa e usa il pinch-to-zoom normalmente. Il pannello inferiore mostra risultati oppure dettagli: usa Indietro per tornare ai risultati, Nascondi per massimizzare la mappa e il controllo in basso a destra per riaprire i risultati. La riga della distribuzione prezzi si espande con un tocco.',
+  freshnessHelpTitle:'Freschezza e storico',historyTitle:'Storico',historyHelp:'La freschezza filtra ogni impianto in base all’età del prezzo comunicato. Lo storico locale contiene solo gli snapshot realmente salvati per gli impianti consultati; i giorni mancanti non vengono mai interpolati.',historyHelpStatic:'La freschezza filtra ogni impianto in base all’età del prezzo comunicato. La mappa pubblica espone lo storico mobile generato di 7 giorni; i giorni mancanti nella fonte restano mancanti e non vengono mai interpolati. Lo stato dello snapshot pubblico è mostrato separatamente nella riga di stato superiore.',
+  aboutVersionLabel:'Versione',aboutModeLabel:'Modalità dati',aboutSnapshotLabel:'Snapshot prezzi',aboutRegistryLabel:'Anagrafica impianti',aboutGeneratedLabel:'Generato',aboutRefreshLabel:'Aggiornamento',
+  aboutModeStatic:'Snapshot pubblico statico',aboutModeLocal:'Runtime Python locale',aboutRefreshStatic:'Programmato alle 09:15 Europe/Rome (GitHub Actions; best-effort)',aboutRefreshLocal:'La sincronizzazione è gestita dal server Python locale',
+  aboutProjectTitle:'Progetto',aboutProjectText:'Interfaccia indipendente costruita su dati pubblici ufficiali italiani dei prezzi carburanti. Non è un servizio ufficiale MIMIT e non implica approvazione da parte degli enti fonte.',
+  repositoryLink:'Repository GitHub',sourcesLicencesLink:'Fonti e licenze',aboutSourcesTitle:'Fonti principali',aboutLicenceNote:'Dati MIMIT: IODL 2.0. Materiale geografico ISTAT: CC BY 4.0. L’attribuzione di dati e tile della mappa resta agli autori di OpenStreetMap. Consulta Fonti e licenze per i dettagli.',
   stations:'stazioni',hiddenStale:'nascoste perché vecchie',min:'min',median:'mediana',max:'max',snapshot:'snapshot',registry:'anagrafica',
   localHistory:'storico locale',publicHistory:'storico pubblico',snapshotDays:'giorni snapshot',tracked:'impianti tracciati',syncing:'Scarico lo snapshot MIMIT attuale…',
   syncDone:'Snapshot attuale sincronizzato',searchNoResults:'Nessuna località trovata.',searching:'Ricerca…',searchError:'Ricerca località fallita',
@@ -197,7 +208,9 @@ function applyLanguage(){
  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>el.placeholder=T(el.dataset.i18nPlaceholder));
  $('langToggle').innerHTML=flagSVG(lang)+`<span>${lang.toUpperCase()}</span>`;
  if($('fitRadiusNav')){$('fitRadiusNav').title=T('fitRadius');$('fitRadiusNav').setAttribute('aria-label',T('fitRadius'))}
- updateResponsiveControls();
+ $('helpBtn').title=T('helpTitle');$('helpBtn').setAttribute('aria-label',T('helpTitle'));
+ $('closeHelp').title=T('close');$('closeHelp').setAttribute('aria-label',T('close'));
+ updateResponsiveControls();renderAbout();
  localStorage.setItem('fuelMapLang',lang);updateCollapsedSummary();render();
  if(lastServerState&&lastServerState.price_date)renderStationStatus(lastServerState)
 }
@@ -389,6 +402,36 @@ function updateDistributionState(){
  const icon=toggle.querySelector('.dist-toggle-icon');
  if(icon)icon.textContent=mobileDistributionOpen?'⌃':'⌄'
 }
+function formatAboutTime(value){
+ if(!value)return'—';
+ const date=new Date(value);if(Number.isNaN(date.getTime()))return String(value);
+ return new Intl.DateTimeFormat(lang==='it'?'it-IT':'en-GB',{
+  dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Rome'
+ }).format(date)
+}
+function renderAbout(){
+ if(!$('aboutVersion'))return;
+ $('aboutVersion').textContent=APP_VERSION;
+ $('aboutMode').textContent=T(DATA.mode==='static'?'aboutModeStatic':'aboutModeLocal');
+ $('aboutSnapshot').textContent=lastServerState.price_date||'—';
+ $('aboutRegistry').textContent=lastServerState.registry_date||'—';
+ $('aboutGenerated').textContent=lastServerState.generated_at?formatAboutTime(lastServerState.generated_at):'—';
+ $('aboutRefresh').textContent=T(DATA.mode==='static'?'aboutRefreshStatic':'aboutRefreshLocal')
+}
+function setHelpTab(tab){
+ const active=tab==='about'?'about':'guide';
+ const guide=active==='guide';
+ $('helpGuidePanel').hidden=!guide;$('helpAboutPanel').hidden=guide;
+ $('helpGuideTab').classList.toggle('selected',guide);$('helpAboutTab').classList.toggle('selected',!guide);
+ $('helpGuideTab').setAttribute('aria-selected',String(guide));$('helpAboutTab').setAttribute('aria-selected',String(!guide));
+ if(!guide)renderAbout()
+}
+function openHelp(tab='guide'){
+ setHelpTab(tab);$('helpModal').classList.add('show');setTimeout(()=>$('closeHelp').focus(),0)
+}
+function closeHelpModal(){
+ $('helpModal').classList.remove('show')
+}
 function updateResponsiveControls(){
  const mobile=isMobileLayout();
  $('hideSidebar').textContent=mobile?'⌄':'›';
@@ -524,7 +567,7 @@ async function loadStations(){
   try{
    const d=await DATA.getStations({lat:current.lat,lon:current.lon,radius,fuel,self});
    if(seq!==requestSeq)return;
-   stations=d.stations||[];lastServerState=d;render();renderStationStatus(d);
+   stations=d.stations||[];lastServerState=d;render();renderStationStatus(d);renderAbout();
    persistPrefs();
   }catch(e){
    if(seq!==requestSeq)return;
@@ -569,10 +612,11 @@ function bindEvents(){
  $('filterReset').addEventListener('click',()=>{filterPriceEnabled=false;filterDistanceEnabled=false;filterMaxPrice=null;filterMaxDistance=null;persistPrefs();render()});
  $('searchForm').addEventListener('submit',e=>{e.preventDefault();const q=$('locationSearch').value.trim();if(q)searchLocation(q)});
  $('langToggle').addEventListener('click',()=>{lang=lang==='en'?'it':'en';applyLanguage()});
- $('helpBtn').addEventListener('click',()=>$('helpModal').classList.add('show'));$('closeHelp').addEventListener('click',()=>$('helpModal').classList.remove('show'));$('helpModal').addEventListener('click',e=>{if(e.target===$('helpModal'))$('helpModal').classList.remove('show')});
+ $('helpBtn').addEventListener('click',()=>openHelp('guide'));$('closeHelp').addEventListener('click',closeHelpModal);$('helpModal').addEventListener('click',e=>{if(e.target===$('helpModal'))closeHelpModal()});
+ document.querySelectorAll('[data-help-tab]').forEach(button=>button.addEventListener('click',()=>setHelpTab(button.dataset.helpTab)));
  $('collapseControls').addEventListener('click',()=>{setControlCollapsed(!$('controlBody').classList.contains('collapsed'));if(document.body.classList.contains('mobile-detail-open'))mobileControlsBeforeDetail=null});$('hideSidebar').addEventListener('click',()=>setSidebarCollapsed(true));$('showSidebar').addEventListener('click',()=>setSidebarCollapsed(false));
  map.on('click',e=>relocate(e.latlng.lat,e.latlng.lng,map.getZoom(),true));map.on('zoomend',()=>{configureAutoLabels(shownStations);updateCustomScale();persistPrefs()});map.on('moveend',updateCustomScale);map.on('resize',updateCustomScale);
- document.addEventListener('keydown',e=>{const tag=(e.target&&e.target.tagName||'').toLowerCase(),typing=tag==='input'||tag==='select'||tag==='textarea';if(e.key==='Escape'){$('helpModal').classList.remove('show');$('searchResults').classList.remove('show');closeMobileStationDetail();map.closePopup();return}if(typing)return;const k=e.key.toLowerCase();if(k==='/'){e.preventDefault();$('locationSearch').focus();return}if(k==='h'||e.key==='?'){$('helpModal').classList.add('show');return}if(k==='r'){loadStations();return}if(k==='l'){useLocation();return}if(e.key==='0'){map.setView([current.lat,current.lon],map.getZoom(),{animate:true});return}if(e.key==='+'||e.key==='='){map.zoomIn();return}if(e.key==='-'){map.zoomOut();return}const keyDir={w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'}[k];if(keyDir){e.preventDefault();pan(keyDir)}});
+ document.addEventListener('keydown',e=>{const tag=(e.target&&e.target.tagName||'').toLowerCase(),typing=tag==='input'||tag==='select'||tag==='textarea';if(e.key==='Escape'){closeHelpModal();$('searchResults').classList.remove('show');closeMobileStationDetail();map.closePopup();return}if(typing)return;const k=e.key.toLowerCase();if(k==='/'){e.preventDefault();$('locationSearch').focus();return}if(k==='h'||e.key==='?'){openHelp('guide');return}if(k==='r'){loadStations();return}if(k==='l'){useLocation();return}if(e.key==='0'){map.setView([current.lat,current.lon],map.getZoom(),{animate:true});return}if(e.key==='+'||e.key==='='){map.zoomIn();return}if(e.key==='-'){map.zoomOut();return}const keyDir={w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'}[k];if(keyDir){e.preventDefault();pan(keyDir)}});
  document.addEventListener('click',e=>{if(!e.target.closest('.search-row'))$('searchResults').classList.remove('show');if(!e.target.closest('#filterPopover')&&!e.target.closest('#filterToggle'))$('filterPopover').hidden=true})
  MOBILE_LAYOUT.addEventListener('change',()=>{mobileDistributionOpen=false;closeMobileStationDetail();updateResponsiveControls();render();if(lastServerState&&lastServerState.price_date)renderStationStatus(lastServerState);resizeMapSoon()})
 }

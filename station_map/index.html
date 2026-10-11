@@ -6,7 +6,7 @@
 <title>MIMIT fuel prices</title>
 <link rel="icon" href="data:,"/>
 <link rel="stylesheet" href="./static/vendor/leaflet/leaflet.css"/>
-<link rel="stylesheet" href="./static/styles.css?v=0.10.0"/>
+<link rel="stylesheet" href="./static/styles.css?v=0.10.1"/>
 </head>
 <body>
 <div id="map"></div>
@@ -23,7 +23,7 @@
     <div class="head-spacer"></div>
     <div class="panel-actions">
       <button class="icon-btn lang-btn" id="langToggle" title="Language"></button>
-      <button class="icon-btn" id="helpBtn" title="Help / shortcuts">?</button>
+      <button class="icon-btn" id="helpBtn" title="Help & about" aria-label="Help & about">?</button>
       <button class="icon-btn" id="collapseControls" title="Collapse controls">▴</button>
     </div>
   </div>
@@ -139,44 +139,87 @@
 </div>
 
 <div id="helpModal" class="modal-backdrop">
-  <div class="modal">
+  <div class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitleText">
     <div class="modal-head">
-      <h2 data-i18n="helpTitle">Map guide</h2>
-      <button class="icon-btn" id="closeHelp">×</button>
+      <h2 id="helpTitleText" data-i18n="helpTitle">Help & about</h2>
+      <button class="icon-btn" id="closeHelp" title="Close" aria-label="Close">×</button>
     </div>
 
-    <h3 data-i18n="guideIntroTitle">Using the map</h3>
-    <p data-i18n="guideIntro">Search for a place, click the map, or use your browser location to choose the centre point. The dashed circle is the active search radius.</p>
-
-    <h3 data-i18n="guideDataTitle">Prices and ranking</h3>
-    <p data-i18n="guideData">Choose fuel, service mode and freshness. Use Filters for maximum price/distance constraints, then sort the remaining stations and optionally limit the displayed result with Show. Map markers, ranking rows and the histogram always use the same final station subset.</p>
-
-    <h3 data-i18n="guideReadTitle">Reading and selecting stations</h3>
-    <p data-i18n="guideRead">Click a map marker or ranking row to select the same station in both views. On phones, station details use the lower sheet so they do not compete with the top controls; use Back to return to the ranking. On larger screens, station details open in the map popup. The selected station is brought above nearby markers with a subtle halo.</p>
-
-    <h3 data-i18n="historyTitle">History</h3>
-    <p data-i18n="historyHelp">The 7/30/90-day views read only dates already stored in the local SQLite database. Sync adds the newest official snapshot only. The current nationwide snapshot is not retained day-by-day; history is kept only for stations in areas you view, so disk use stays small.</p>
-
-    <h3 data-i18n="shortcuts">Keyboard shortcuts</h3>
-    <div class="shortcuts">
-      <div class="shortcut"><kbd>W / ↑</kbd><span data-i18n="panNorth">Pan north</span></div>
-      <div class="shortcut"><kbd>A / ←</kbd><span data-i18n="panWest">Pan west</span></div>
-      <div class="shortcut"><kbd>S / ↓</kbd><span data-i18n="panSouth">Pan south</span></div>
-      <div class="shortcut"><kbd>D / →</kbd><span data-i18n="panEast">Pan east</span></div>
-      <div class="shortcut"><kbd>+ / −</kbd><span data-i18n="zoom">Zoom in / out</span></div>
-      <div class="shortcut"><kbd>0</kbd><span data-i18n="recenter">Recenter</span></div>
-      <div class="shortcut"><kbd>R</kbd><span data-i18n="refresh">Refresh map</span></div>
-      <div class="shortcut"><kbd>L</kbd><span data-i18n="myLocation">Use my location</span></div>
-      <div class="shortcut"><kbd>/</kbd><span data-i18n="focusSearch">Focus search</span></div>
-      <div class="shortcut"><kbd>H / ?</kbd><span data-i18n="helpTitle">Map guide</span></div>
-      <div class="shortcut"><kbd>Esc</kbd><span data-i18n="close">Close popup/menu</span></div>
+    <div class="help-tabs" role="tablist" aria-label="Help sections">
+      <button class="help-tab-btn selected" id="helpGuideTab" type="button" role="tab" aria-selected="true" aria-controls="helpGuidePanel" data-help-tab="guide" data-i18n="guideTab">Guide</button>
+      <button class="help-tab-btn" id="helpAboutTab" type="button" role="tab" aria-selected="false" aria-controls="helpAboutPanel" data-help-tab="about" data-i18n="aboutTab">About</button>
     </div>
+
+    <section class="help-tab-panel" id="helpGuidePanel" role="tabpanel" aria-labelledby="helpGuideTab">
+      <h3 data-i18n="guideIntroTitle">Using the map</h3>
+      <p data-i18n="guideIntro">Search for a place, click the map, or use your browser location to choose the centre point. The dashed circle is the active search radius.</p>
+
+      <h3 data-i18n="guideDataTitle">Prices and ranking</h3>
+      <p data-i18n="guideData">Choose fuel, service mode and freshness. Filters can limit maximum price and/or straight-line distance. Sort and Show affect the final visible subset used consistently by the map, ranking and price distribution.</p>
+
+      <h3 data-i18n="guideReadTitle">Station details</h3>
+      <p data-i18n="guideRead">Select a marker or ranking row to focus the same station. Desktop opens a map popup; narrow screens switch the lower sheet from results to station details. History always belongs to the selected fuel and service mode.</p>
+
+      <div class="help-touch-only">
+        <h3 data-i18n="touchTitle">Touch controls</h3>
+        <p data-i18n="touchHelp">Drag and pinch the map normally. The lower sheet holds either results or station details: use Back to return to results, Hide to maximize the map, and the bottom-right reopen control to restore results. The price-distribution row expands on tap.</p>
+      </div>
+
+      <h3 data-i18n="freshnessHelpTitle">Freshness and history</h3>
+      <p data-i18n="historyHelp">Freshness filters each station by its communicated price age. Local history contains only snapshots actually stored for viewed stations; missing days are never interpolated.</p>
+
+      <div class="help-desktop-only">
+        <h3 data-i18n="shortcuts">Keyboard shortcuts</h3>
+        <div class="shortcuts">
+          <div class="shortcut"><kbd>W / ↑</kbd><span data-i18n="panNorth">Pan north</span></div>
+          <div class="shortcut"><kbd>A / ←</kbd><span data-i18n="panWest">Pan west</span></div>
+          <div class="shortcut"><kbd>S / ↓</kbd><span data-i18n="panSouth">Pan south</span></div>
+          <div class="shortcut"><kbd>D / →</kbd><span data-i18n="panEast">Pan east</span></div>
+          <div class="shortcut"><kbd>+ / −</kbd><span data-i18n="zoom">Zoom in / out</span></div>
+          <div class="shortcut"><kbd>0</kbd><span data-i18n="recenter">Recenter</span></div>
+          <div class="shortcut"><kbd>R</kbd><span data-i18n="refresh">Refresh map</span></div>
+          <div class="shortcut"><kbd>L</kbd><span data-i18n="myLocation">Use my location</span></div>
+          <div class="shortcut"><kbd>/</kbd><span data-i18n="focusSearch">Focus search</span></div>
+          <div class="shortcut"><kbd>H / ?</kbd><span data-i18n="helpTitle">Help & about</span></div>
+          <div class="shortcut"><kbd>Esc</kbd><span data-i18n="close">Close popup/menu</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="help-tab-panel" id="helpAboutPanel" role="tabpanel" aria-labelledby="helpAboutTab" hidden>
+      <div class="about-grid">
+        <div class="about-label" data-i18n="aboutVersionLabel">Version</div><div id="aboutVersion"></div>
+        <div class="about-label" data-i18n="aboutModeLabel">Data mode</div><div id="aboutMode"></div>
+        <div class="about-label" data-i18n="aboutSnapshotLabel">Price snapshot</div><div id="aboutSnapshot"></div>
+        <div class="about-label" data-i18n="aboutRegistryLabel">Station registry</div><div id="aboutRegistry"></div>
+        <div class="about-label" id="aboutGeneratedLabel" data-i18n="aboutGeneratedLabel">Generated</div><div id="aboutGenerated"></div>
+        <div class="about-label" data-i18n="aboutRefreshLabel">Refresh</div><div id="aboutRefresh"></div>
+      </div>
+
+      <h3 data-i18n="aboutProjectTitle">Project</h3>
+      <p data-i18n="aboutProjectText">Independent interface built around official Italian public fuel-price data. It is not an official MIMIT service and does not imply endorsement by the source institutions.</p>
+      <p class="about-links">
+        <a href="https://github.com/HunterNise/italy-fuel-price" target="_blank" rel="noopener noreferrer" data-i18n="repositoryLink">GitHub repository</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/HunterNise/italy-fuel-price/blob/main/DATA_SOURCES_AND_LICENSES.md" target="_blank" rel="noopener noreferrer" data-i18n="sourcesLicencesLink">Sources & licences</a>
+      </p>
+
+      <h3 data-i18n="aboutSourcesTitle">Primary sources</h3>
+      <p class="about-links">
+        <a href="https://www.mimit.gov.it/index.php/it/open-data/elenco-dataset/carburanti-prezzi-praticati-e-anagrafica-degli-impianti" target="_blank" rel="noopener noreferrer">MIMIT</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://www.istat.it/" target="_blank" rel="noopener noreferrer">ISTAT</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>
+      </p>
+      <p class="about-note" data-i18n="aboutLicenceNote">MIMIT data: IODL 2.0. ISTAT geographic material: CC BY 4.0. Map tiles/data attribution remains with OpenStreetMap contributors. See Sources & licences for details.</p>
+    </section>
   </div>
 </div>
 
 <script src="./static/vendor/leaflet/leaflet.js"></script>
-<script src="./static/runtime-config.js?v=0.10.0"></script>
-<script src="./static/data-provider.js?v=0.10.0"></script>
-<script src="./static/app.js?v=0.10.0"></script>
+<script src="./static/runtime-config.js?v=0.10.1"></script>
+<script src="./static/data-provider.js?v=0.10.1"></script>
+<script src="./static/app.js?v=0.10.1"></script>
 </body>
 </html>
