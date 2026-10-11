@@ -3,31 +3,22 @@
 This document collects future ideas and likely next steps. It is deliberately
 separate from changelogs and current-state architecture documents.
 
-The current working application line is **0.10.x**. It establishes the
-touch-first mobile results/detail model, responsive Help & About, public/static
-deployment metadata, and the existing local/static provider boundary. The
-previous selected public milestone remains `station-map-pages-v0.9.7` until a
-new 0.10.x milestone is merged and tagged.
+The selected stable public milestone is
+`station-map-mobile-v0.10.2`. It is deployed from `main` and closes the initial
+mobile/browser-QoL phase: touch-first results/details, responsive Help & About,
+public/static deployment metadata, consolidated narrow-screen layout ownership,
+and mixed-vintage source protection are all part of the baseline.
 
 Future work should remain incremental: preserve the working local and static
 providers, prefer bounded changes, and keep larger external-service
 dependencies isolated until their value and operating constraints are
 understood.
 
-## Current 0.10 baseline and remaining browser QoL
+## Post-0.10 browser QoL
 
-Implemented through 0.10.2:
+The 0.10 mobile/QoL milestone is complete. The remaining browser improvements
+are useful bounded follow-ups, but they do not block larger application work:
 
-- one lower results/detail surface on narrow screens, with desktop popups
-  preserved;
-- touch-first map controls, mobile information-density cleanup, and reliable
-  marker selection;
-- responsive Guide/About content with live provider/build metadata;
-- prominent repository/source attribution paths and keyboard-accessible modal
-  behavior;
-- consolidated narrow-screen CSS ownership.
-
-Remaining browser QoL:
 
 - Add optional swipe/drag gestures and predictable peek/partial/expanded sheet
   positions while keeping explicit tap controls as the accessible fallback.
@@ -49,9 +40,12 @@ Remaining browser QoL:
 - Revisit collapsed/expanded summaries so important context remains visible
   without duplicating information already shown elsewhere.
 
-## Service-mode QoL
+## Next feature: combined service mode
 
-- Revisit a combined self-service + served mode.
+The next application feature should revisit a combined self-service + served
+mode using the station-centric interaction model established in 0.10.x.
+
+- Add a combined self-service + served mode.
 - Model it as **one physical station, one marker, one station card**, with both
   available service offers shown inside the card rather than as independently
   overlapping markers.
