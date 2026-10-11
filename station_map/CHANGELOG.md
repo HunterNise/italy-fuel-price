@@ -11,6 +11,18 @@ history**. The earlier `v1`…`v8` ZIP names were development labels rather than
 formal semantic-version tags. SemVer becomes the canonical station-map version
 scheme from 0.8.2 onward.
 
+## [0.10.2] - 2026-10-11
+
+### Added
+- Added a prominent black GitHub project banner with the GitHub mark in About.
+
+### Changed
+- Moved mobile touch instructions to the end of the Guide, mirroring the desktop keyboard-shortcut structure.
+- Consolidated superseded narrow-screen CSS into the authoritative mobile interaction block without intended layout changes.
+
+### Fixed
+- Improved Help/About keyboard accessibility with focus containment, focus restoration, arrow-key tab navigation, and suppression of map shortcuts while the dialog is open.
+
 ## [0.10.1] - 2026-10-11
 
 ### Added

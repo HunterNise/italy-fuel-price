@@ -3,47 +3,42 @@
 This document collects future ideas and likely next steps. It is deliberately
 separate from changelogs and current-state architecture documents.
 
-The current public deployment milestone is `station-map-pages-v0.9.7`. Future
-work should remain incremental: preserve the working local and static providers,
-prefer bounded changes, and keep larger external-service dependencies isolated
-until their value and operating constraints are understood.
+The current working application line is **0.10.x**. It establishes the
+touch-first mobile results/detail model, responsive Help & About, public/static
+deployment metadata, and the existing local/static provider boundary. The
+previous selected public milestone remains `station-map-pages-v0.9.7` until a
+new 0.10.x milestone is merged and tagged.
 
-## Next phase: mobile UX and browser QoL
+Future work should remain incremental: preserve the working local and static
+providers, prefer bounded changes, and keep larger external-service
+dependencies isolated until their value and operating constraints are
+understood.
 
-The next development phase should focus on making the map genuinely touch-first
-on narrow screens instead of only compressing the desktop layout.
+## Current 0.10 baseline and remaining browser QoL
 
-### Mobile interaction model
+Implemented through 0.10.2:
 
-The initial tap-driven mobile redesign is implemented in 0.10.0: the lower
-sheet owns either ranking results or station details, desktop popups are
-preserved, station-marker taps no longer fall through to map relocation, and
-the narrow-screen hierarchy prioritizes controls/results over explanatory copy.
+- one lower results/detail surface on narrow screens, with desktop popups
+  preserved;
+- touch-first map controls, mobile information-density cleanup, and reliable
+  marker selection;
+- responsive Guide/About content with live provider/build metadata;
+- prominent repository/source attribution paths and keyboard-accessible modal
+  behavior;
+- consolidated narrow-screen CSS ownership.
 
-Remaining work:
+Remaining browser QoL:
 
 - Add optional swipe/drag gestures and predictable peek/partial/expanded sheet
   positions while keeping explicit tap controls as the accessible fallback.
-- Continue refining scroll ownership between the map, details/ranking sheet,
-  dialogs, and page itself.
 - Test and tune portrait phone, landscape phone, tablet, and desktop layouts as
   separate interaction targets.
-- Add focused browser-level responsive regression checks for interactions that
-  DOM/unit tests cannot adequately cover.
-
-### Help and secondary information
-
-Implemented in 0.10.1: Help and About are separate tabs, mobile guidance is
-touch-specific, desktop retains keyboard shortcuts, and About exposes the
-running version/provider plus loaded snapshot, registry and generation metadata,
-refresh policy, repository, and concise source/licence links.
-
-Remaining work:
-
-- Keep usage copy synchronized with future gestures, service modes and routing
-  features rather than duplicating detailed documentation in the modal.
-- Consider exposing an exact deployed commit identifier later if the public
-  build manifest makes it available without adding another runtime dependency.
+- Add focused browser-level responsive regression checks if their value
+  justifies introducing browser-test tooling.
+- Keep Help copy synchronized with future gestures, service modes and routing
+  features rather than duplicating detailed documentation.
+- Consider exposing an exact deployed commit identifier if the public build
+  manifest later makes it available without another runtime dependency.
 
 ### Smaller map QoL
 

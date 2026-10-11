@@ -26,7 +26,7 @@ const I18N={
   aboutVersionLabel:'Version',aboutModeLabel:'Data mode',aboutSnapshotLabel:'Price snapshot',aboutRegistryLabel:'Station registry',aboutGeneratedLabel:'Generated',aboutRefreshLabel:'Refresh',
   aboutModeStatic:'Public static snapshot',aboutModeLocal:'Local Python runtime',aboutRefreshStatic:'Scheduled 09:15 Europe/Rome (GitHub Actions; best-effort)',aboutRefreshLocal:'Synchronization is controlled by the local Python server',
   aboutProjectTitle:'Project',aboutProjectText:'Independent interface built around official Italian public fuel-price data. It is not an official MIMIT service and does not imply endorsement by the source institutions.',
-  repositoryLink:'GitHub repository',sourcesLicencesLink:'Sources & licences',aboutSourcesTitle:'Primary sources',aboutLicenceNote:'MIMIT data: IODL 2.0. ISTAT geographic material: CC BY 4.0. Map tiles/data attribution remains with OpenStreetMap contributors. See Sources & licences for details.',
+  repositoryLink:'GitHub repository',githubCtaTitle:'View project on GitHub',githubCtaSubtitle:'Source code, documentation and development history',sourcesLicencesLink:'Sources & licences',aboutSourcesTitle:'Primary sources',aboutLicenceNote:'MIMIT data: IODL 2.0. ISTAT geographic material: CC BY 4.0. Map tiles/data attribution remains with OpenStreetMap contributors. See Sources & licences for details.',
   stations:'stations',hiddenStale:'hidden as stale',min:'min',median:'median',max:'max',snapshot:'snapshot',registry:'registry',
   localHistory:'local history',publicHistory:'public history',snapshotDays:'snapshot days',tracked:'tracked stations',syncing:'Downloading the official current MIMIT snapshot…',
   syncDone:'Current snapshot synchronized',searchNoResults:'No places found.',searching:'Searching…',searchError:'Location search failed',
@@ -57,7 +57,7 @@ const I18N={
   aboutVersionLabel:'Versione',aboutModeLabel:'Modalità dati',aboutSnapshotLabel:'Snapshot prezzi',aboutRegistryLabel:'Anagrafica impianti',aboutGeneratedLabel:'Generato',aboutRefreshLabel:'Aggiornamento',
   aboutModeStatic:'Snapshot pubblico statico',aboutModeLocal:'Runtime Python locale',aboutRefreshStatic:'Programmato alle 09:15 Europe/Rome (GitHub Actions; best-effort)',aboutRefreshLocal:'La sincronizzazione è gestita dal server Python locale',
   aboutProjectTitle:'Progetto',aboutProjectText:'Interfaccia indipendente costruita su dati pubblici ufficiali italiani dei prezzi carburanti. Non è un servizio ufficiale MIMIT e non implica approvazione da parte degli enti fonte.',
-  repositoryLink:'Repository GitHub',sourcesLicencesLink:'Fonti e licenze',aboutSourcesTitle:'Fonti principali',aboutLicenceNote:'Dati MIMIT: IODL 2.0. Materiale geografico ISTAT: CC BY 4.0. L’attribuzione di dati e tile della mappa resta agli autori di OpenStreetMap. Consulta Fonti e licenze per i dettagli.',
+  repositoryLink:'Repository GitHub',githubCtaTitle:'Apri il progetto su GitHub',githubCtaSubtitle:'Codice sorgente, documentazione e cronologia di sviluppo',sourcesLicencesLink:'Fonti e licenze',aboutSourcesTitle:'Fonti principali',aboutLicenceNote:'Dati MIMIT: IODL 2.0. Materiale geografico ISTAT: CC BY 4.0. L’attribuzione di dati e tile della mappa resta agli autori di OpenStreetMap. Consulta Fonti e licenze per i dettagli.',
   stations:'stazioni',hiddenStale:'nascoste perché vecchie',min:'min',median:'mediana',max:'max',snapshot:'snapshot',registry:'anagrafica',
   localHistory:'storico locale',publicHistory:'storico pubblico',snapshotDays:'giorni snapshot',tracked:'impianti tracciati',syncing:'Scarico lo snapshot MIMIT attuale…',
   syncDone:'Snapshot attuale sincronizzato',searchNoResults:'Nessuna località trovata.',searching:'Ricerca…',searchError:'Ricerca località fallita',
@@ -153,7 +153,7 @@ let center=null,radiusCircle=null,stations=[],shownStations=[],requestSeq=0,mark
 let filterPriceEnabled=!!prefs.filterPriceEnabled,filterDistanceEnabled=!!prefs.filterDistanceEnabled;
 let filterMaxPrice=Number.isFinite(Number(prefs.filterMaxPrice))?Number(prefs.filterMaxPrice):null;
 let filterMaxDistance=Number.isFinite(Number(prefs.filterMaxDistance))?Number(prefs.filterMaxDistance):null;
-let mobileControlsBeforeDetail=null,mobileDistributionOpen=false;
+let mobileControlsBeforeDetail=null,mobileDistributionOpen=false,helpReturnFocus=null;
 
 function T(key,vars={}){
  let s=(I18N[lang]&&I18N[lang][key])||I18N.en[key]||key;
@@ -418,19 +418,45 @@ function renderAbout(){
  $('aboutGenerated').textContent=lastServerState.generated_at?formatAboutTime(lastServerState.generated_at):'—';
  $('aboutRefresh').textContent=T(DATA.mode==='static'?'aboutRefreshStatic':'aboutRefreshLocal')
 }
-function setHelpTab(tab){
+function setHelpTab(tab,{focus=false}={}){
  const active=tab==='about'?'about':'guide';
- const guide=active==='guide';
+ const guide=active==='guide',guideTab=$('helpGuideTab'),aboutTab=$('helpAboutTab');
  $('helpGuidePanel').hidden=!guide;$('helpAboutPanel').hidden=guide;
- $('helpGuideTab').classList.toggle('selected',guide);$('helpAboutTab').classList.toggle('selected',!guide);
- $('helpGuideTab').setAttribute('aria-selected',String(guide));$('helpAboutTab').setAttribute('aria-selected',String(!guide));
- if(!guide)renderAbout()
+ guideTab.classList.toggle('selected',guide);aboutTab.classList.toggle('selected',!guide);
+ guideTab.setAttribute('aria-selected',String(guide));aboutTab.setAttribute('aria-selected',String(!guide));
+ guideTab.tabIndex=guide?0:-1;aboutTab.tabIndex=guide?-1:0;
+ if(!guide)renderAbout();
+ if(focus)(guide?guideTab:aboutTab).focus()
+}
+function helpFocusable(){
+ return [...$('helpModal').querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')]
+  .filter(el=>!el.disabled&&!el.hidden&&el.offsetParent!==null)
 }
 function openHelp(tab='guide'){
- setHelpTab(tab);$('helpModal').classList.add('show');setTimeout(()=>$('closeHelp').focus(),0)
+ if(!$('helpModal').classList.contains('show'))helpReturnFocus=document.activeElement;
+ setHelpTab(tab);$('helpModal').classList.add('show');
+ setTimeout(()=>$(tab==='about'?'helpAboutTab':'helpGuideTab').focus(),0)
 }
 function closeHelpModal(){
- $('helpModal').classList.remove('show')
+ const modal=$('helpModal');if(!modal.classList.contains('show'))return;
+ modal.classList.remove('show');
+ const target=helpReturnFocus;helpReturnFocus=null;
+ if(target&&document.contains(target)&&typeof target.focus==='function')setTimeout(()=>target.focus(),0)
+}
+function handleHelpKeydown(e){
+ const modal=$('helpModal');if(!modal.classList.contains('show'))return;
+ if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeHelpModal();return}
+ const tab=e.target.closest&&e.target.closest('[data-help-tab]');
+ if(tab&&(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='Home'||e.key==='End')){
+  e.preventDefault();e.stopPropagation();
+  const next=e.key==='ArrowLeft'||e.key==='Home'?'guide':'about';
+  setHelpTab(next,{focus:true});return
+ }
+ if(e.key!=='Tab')return;
+ const items=helpFocusable();if(!items.length)return;
+ const first=items[0],last=items.at(-1);
+ if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+ else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
 }
 function updateResponsiveControls(){
  const mobile=isMobileLayout();
@@ -612,11 +638,11 @@ function bindEvents(){
  $('filterReset').addEventListener('click',()=>{filterPriceEnabled=false;filterDistanceEnabled=false;filterMaxPrice=null;filterMaxDistance=null;persistPrefs();render()});
  $('searchForm').addEventListener('submit',e=>{e.preventDefault();const q=$('locationSearch').value.trim();if(q)searchLocation(q)});
  $('langToggle').addEventListener('click',()=>{lang=lang==='en'?'it':'en';applyLanguage()});
- $('helpBtn').addEventListener('click',()=>openHelp('guide'));$('closeHelp').addEventListener('click',closeHelpModal);$('helpModal').addEventListener('click',e=>{if(e.target===$('helpModal'))closeHelpModal()});
- document.querySelectorAll('[data-help-tab]').forEach(button=>button.addEventListener('click',()=>setHelpTab(button.dataset.helpTab)));
+ $('helpBtn').addEventListener('click',()=>openHelp('guide'));$('closeHelp').addEventListener('click',closeHelpModal);$('helpModal').addEventListener('click',e=>{if(e.target===$('helpModal'))closeHelpModal()});$('helpModal').addEventListener('keydown',handleHelpKeydown);
+ document.querySelectorAll('[data-help-tab]').forEach(button=>button.addEventListener('click',()=>setHelpTab(button.dataset.helpTab,{focus:true})));
  $('collapseControls').addEventListener('click',()=>{setControlCollapsed(!$('controlBody').classList.contains('collapsed'));if(document.body.classList.contains('mobile-detail-open'))mobileControlsBeforeDetail=null});$('hideSidebar').addEventListener('click',()=>setSidebarCollapsed(true));$('showSidebar').addEventListener('click',()=>setSidebarCollapsed(false));
  map.on('click',e=>relocate(e.latlng.lat,e.latlng.lng,map.getZoom(),true));map.on('zoomend',()=>{configureAutoLabels(shownStations);updateCustomScale();persistPrefs()});map.on('moveend',updateCustomScale);map.on('resize',updateCustomScale);
- document.addEventListener('keydown',e=>{const tag=(e.target&&e.target.tagName||'').toLowerCase(),typing=tag==='input'||tag==='select'||tag==='textarea';if(e.key==='Escape'){closeHelpModal();$('searchResults').classList.remove('show');closeMobileStationDetail();map.closePopup();return}if(typing)return;const k=e.key.toLowerCase();if(k==='/'){e.preventDefault();$('locationSearch').focus();return}if(k==='h'||e.key==='?'){openHelp('guide');return}if(k==='r'){loadStations();return}if(k==='l'){useLocation();return}if(e.key==='0'){map.setView([current.lat,current.lon],map.getZoom(),{animate:true});return}if(e.key==='+'||e.key==='='){map.zoomIn();return}if(e.key==='-'){map.zoomOut();return}const keyDir={w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'}[k];if(keyDir){e.preventDefault();pan(keyDir)}});
+ document.addEventListener('keydown',e=>{if($('helpModal').classList.contains('show'))return;const tag=(e.target&&e.target.tagName||'').toLowerCase(),typing=tag==='input'||tag==='select'||tag==='textarea';if(e.key==='Escape'){$('searchResults').classList.remove('show');closeMobileStationDetail();map.closePopup();return}if(typing)return;const k=e.key.toLowerCase();if(k==='/'){e.preventDefault();$('locationSearch').focus();return}if(k==='h'||e.key==='?'){openHelp('guide');return}if(k==='r'){loadStations();return}if(k==='l'){useLocation();return}if(e.key==='0'){map.setView([current.lat,current.lon],map.getZoom(),{animate:true});return}if(e.key==='+'||e.key==='='){map.zoomIn();return}if(e.key==='-'){map.zoomOut();return}const keyDir={w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'}[k];if(keyDir){e.preventDefault();pan(keyDir)}});
  document.addEventListener('click',e=>{if(!e.target.closest('.search-row'))$('searchResults').classList.remove('show');if(!e.target.closest('#filterPopover')&&!e.target.closest('#filterToggle'))$('filterPopover').hidden=true})
  MOBILE_LAYOUT.addEventListener('change',()=>{mobileDistributionOpen=false;closeMobileStationDetail();updateResponsiveControls();render();if(lastServerState&&lastServerState.price_date)renderStationStatus(lastServerState);resizeMapSoon()})
 }

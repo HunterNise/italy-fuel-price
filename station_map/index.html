@@ -6,7 +6,7 @@
 <title>MIMIT fuel prices</title>
 <link rel="icon" href="data:,"/>
 <link rel="stylesheet" href="./static/vendor/leaflet/leaflet.css"/>
-<link rel="stylesheet" href="./static/styles.css?v=0.10.1"/>
+<link rel="stylesheet" href="./static/styles.css?v=0.10.2"/>
 </head>
 <body>
 <div id="map"></div>
@@ -160,11 +160,6 @@
       <h3 data-i18n="guideReadTitle">Station details</h3>
       <p data-i18n="guideRead">Select a marker or ranking row to focus the same station. Desktop opens a map popup; narrow screens switch the lower sheet from results to station details. History always belongs to the selected fuel and service mode.</p>
 
-      <div class="help-touch-only">
-        <h3 data-i18n="touchTitle">Touch controls</h3>
-        <p data-i18n="touchHelp">Drag and pinch the map normally. The lower sheet holds either results or station details: use Back to return to results, Hide to maximize the map, and the bottom-right reopen control to restore results. The price-distribution row expands on tap.</p>
-      </div>
-
       <h3 data-i18n="freshnessHelpTitle">Freshness and history</h3>
       <p data-i18n="historyHelp">Freshness filters each station by its communicated price age. Local history contains only snapshots actually stored for viewed stations; missing days are never interpolated.</p>
 
@@ -184,6 +179,11 @@
           <div class="shortcut"><kbd>Esc</kbd><span data-i18n="close">Close popup/menu</span></div>
         </div>
       </div>
+
+      <div class="help-touch-only">
+        <h3 data-i18n="touchTitle">Touch controls</h3>
+        <p data-i18n="touchHelp">Drag and pinch the map normally. The lower sheet holds either results or station details: use Back to return to results, Hide to maximize the map, and the bottom-right reopen control to restore results. The price-distribution row expands on tap.</p>
+      </div>
     </section>
 
     <section class="help-tab-panel" id="helpAboutPanel" role="tabpanel" aria-labelledby="helpAboutTab" hidden>
@@ -198,9 +198,12 @@
 
       <h3 data-i18n="aboutProjectTitle">Project</h3>
       <p data-i18n="aboutProjectText">Independent interface built around official Italian public fuel-price data. It is not an official MIMIT service and does not imply endorsement by the source institutions.</p>
-      <p class="about-links">
-        <a href="https://github.com/HunterNise/italy-fuel-price" target="_blank" rel="noopener noreferrer" data-i18n="repositoryLink">GitHub repository</a>
-        <span aria-hidden="true">·</span>
+      <a class="github-cta" href="https://github.com/HunterNise/italy-fuel-price" target="_blank" rel="noopener noreferrer">
+        <svg class="github-mark" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.64 0 8.13c0 3.59 2.29 6.64 5.47 7.71.4.08.55-.18.55-.39 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.53-.01-.54.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.08-1.78-.21-3.64-.91-3.64-4.02 0-.89.31-1.63.82-2.2-.08-.2-.36-1.04.08-2.17 0 0 .67-.22 2.2.84A7.5 7.5 0 0 1 8 3.95a7.5 7.5 0 0 1 2 .27c1.53-1.06 2.2-.84 2.2-.84.44 1.13.16 1.97.08 2.17.51.57.82 1.31.82 2.2 0 3.12-1.87 3.81-3.65 4.02.29.25.54.74.54 1.5 0 1.08-.01 1.95-.01 2.22 0 .22.15.47.55.39A8.16 8.16 0 0 0 16 8.13C16 3.64 12.42 0 8 0Z"/></svg>
+        <span class="github-cta-copy"><strong data-i18n="githubCtaTitle">View project on GitHub</strong><span data-i18n="githubCtaSubtitle">Source code, documentation and development history</span></span>
+        <span class="github-cta-arrow" aria-hidden="true">↗</span>
+      </a>
+      <p class="about-links about-secondary-links">
         <a href="https://github.com/HunterNise/italy-fuel-price/blob/main/DATA_SOURCES_AND_LICENSES.md" target="_blank" rel="noopener noreferrer" data-i18n="sourcesLicencesLink">Sources & licences</a>
       </p>
 
@@ -218,8 +221,8 @@
 </div>
 
 <script src="./static/vendor/leaflet/leaflet.js"></script>
-<script src="./static/runtime-config.js?v=0.10.1"></script>
-<script src="./static/data-provider.js?v=0.10.1"></script>
-<script src="./static/app.js?v=0.10.1"></script>
+<script src="./static/runtime-config.js?v=0.10.2"></script>
+<script src="./static/data-provider.js?v=0.10.2"></script>
+<script src="./static/app.js?v=0.10.2"></script>
 </body>
 </html>
