@@ -1,6 +1,6 @@
 # Italy live station-price map
 
-**Version 0.9.7**
+**Version 0.9.8**
 
 A local interactive map for Italian fuel-station prices using official MIMIT
 station and price data.
@@ -104,10 +104,16 @@ radius/fuel/mode/freshness
   → map + ranking + histogram
 ```
 
-Clicking a marker or ranking row selects the same station in both views. Price
-labels become persistent at closer zoom levels or when only a small number of
-stations is shown. The `⛶` control centres the selected search point and fits
-the complete active radius.
+Clicking a marker or ranking row selects the same station in both views. On
+desktop, station details remain in the Leaflet popup. On screens up to 820 px,
+station details replace the lower ranking content inside the same bottom sheet,
+with explicit Back and Hide controls; this prevents the popup, ranking, and top
+controls from competing for the phone viewport. Swipe/drag sheet gestures are
+not part of this first mobile-state slice.
+
+Price labels become persistent at closer zoom levels or when only a small
+number of stations is shown. The `⛶` control centres the selected search point
+and fits the complete active radius.
 
 ## Version history
 

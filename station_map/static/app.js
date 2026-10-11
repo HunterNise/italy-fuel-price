@@ -4,6 +4,8 @@ const PREF_KEY='fuelMapPrefsV4';
 const LEGACY_PREF_KEYS=['fuelMapPrefsV3','fuelMapPrefsV2','fuelMapPrefsV1'];
 const DATA=window.FuelMapData;
 if(!DATA)throw Error('FuelMap data provider is not loaded.');
+const MOBILE_LAYOUT=window.matchMedia('(max-width: 820px)');
+const isMobileLayout=()=>MOBILE_LAYOUT.matches;
 
 const I18N={
  en:{
@@ -14,10 +16,10 @@ const I18N={
   ready:'Ready.',bestNearby:'Best prices nearby',rankSubtitle:'Price ranking ignores brands/ratings. Distance is straight-line from the selected point.',
   sort:'Sort',price:'Price',distance:'Distance',savings:'Savings vs median',show:'Show',filters:'Filters',maxPriceLabel:'Max price',maxDistanceLabel:'Max distance',resetFilters:'Reset filters',distribution:'Current price distribution',
   relativePrice:'Relative price',helpTitle:'Map guide',shortcuts:'Keyboard shortcuts',panNorth:'Pan north',panWest:'Pan west',panSouth:'Pan south',panEast:'Pan east',zoom:'Zoom in / out',recenter:'Recenter',
-  focusSearch:'Focus search',close:'Close popup/menu',
+  focusSearch:'Focus search',close:'Close popup/menu',backToResults:'Back to results',hidePanel:'Hide panel',showResults:'Show results',stationDetails:'Station details',
   guideIntroTitle:'Using the map',guideIntro:'Search for a place, click the map, or use your browser location to choose the centre point. The dashed circle is the active search radius.',
   guideDataTitle:'Prices and ranking',guideData:'Choose fuel, service mode and freshness. Use Filters for maximum price/distance constraints, then sort the remaining stations and optionally limit the displayed result with Show. Map markers, ranking rows and the histogram always use the same final station subset.',
-  guideReadTitle:'Reading and selecting stations',guideRead:'Click a map marker or ranking row to select the same station in both views. The selected station is brought above nearby markers with a subtle halo. Use the ⛶ map button to centre and maximize the active search radius. Price labels appear automatically at closer zoom or when only a small number of stations is shown.',
+  guideReadTitle:'Reading and selecting stations',guideRead:'Click a map marker or ranking row to select the same station in both views. On phones, station details use the lower sheet so they do not compete with the top controls; use Back to return to the ranking. On larger screens, station details open in the map popup. The selected station is brought above nearby markers with a subtle halo.',
   historyTitle:'History',historyHelp:'The 7/30/90-day views read only dates already stored in the local SQLite database. Sync adds the newest official snapshot only. The current nationwide snapshot is not retained day-by-day; history is kept only for stations in areas you view, so disk use stays small.',historyHelpStatic:'The public map exposes the generated rolling 7-day history. Missing source days remain missing and are never interpolated.',
   stations:'stations',hiddenStale:'hidden as stale',min:'min',median:'median',max:'max',snapshot:'snapshot',registry:'registry',
   localHistory:'local history',publicHistory:'public history',snapshotDays:'snapshot days',tracked:'tracked stations',syncing:'Downloading the official current MIMIT snapshot…',
@@ -40,10 +42,10 @@ const I18N={
   ready:'Pronto.',bestNearby:'Migliori prezzi nei dintorni',rankSubtitle:'La classifica ignora marchi/recensioni. La distanza è in linea d’aria dal punto selezionato.',
   sort:'Ordina',price:'Prezzo',distance:'Distanza',savings:'Risparmio vs mediana',show:'Mostra',filters:'Filtri',maxPriceLabel:'Prezzo max',maxDistanceLabel:'Distanza max',resetFilters:'Azzera filtri',distribution:'Distribuzione prezzi attuale',
   relativePrice:'Prezzo relativo',helpTitle:'Guida mappa',shortcuts:'Scorciatoie da tastiera',panNorth:'Sposta a nord',panWest:'Sposta a ovest',panSouth:'Sposta a sud',panEast:'Sposta a est',zoom:'Zoom avanti / indietro',recenter:'Ricentra',
-  focusSearch:'Vai alla ricerca',close:'Chiudi popup/menu',
+  focusSearch:'Vai alla ricerca',close:'Chiudi popup/menu',backToResults:'Torna ai risultati',hidePanel:'Nascondi pannello',showResults:'Mostra risultati',stationDetails:'Dettagli impianto',
   guideIntroTitle:'Come usare la mappa',guideIntro:'Cerca una località, clicca sulla mappa oppure usa la posizione del browser per scegliere il punto centrale. Il cerchio tratteggiato è il raggio di ricerca attivo.',
   guideDataTitle:'Prezzi e classifica',guideData:'Scegli carburante, modalità di servizio e freschezza. Usa Filtri per applicare limiti massimi di prezzo e/o distanza, poi ordina le stazioni rimanenti e limita eventualmente il risultato con Mostra. Marker, righe e istogramma usano sempre lo stesso sottoinsieme finale.',
-  guideReadTitle:'Lettura e selezione delle stazioni',guideRead:'Clicca un marker o una riga della classifica per selezionare lo stesso impianto in entrambe le viste. La stazione selezionata viene portata sopra i marker vicini con un alone discreto. Usa il pulsante ⛶ sulla mappa per centrare e massimizzare il raggio attivo. Le etichette prezzo compaiono automaticamente a zoom ravvicinato o quando sono mostrate poche stazioni.',
+  guideReadTitle:'Lettura e selezione delle stazioni',guideRead:'Clicca un marker o una riga della classifica per selezionare lo stesso impianto in entrambe le viste. Su telefono i dettagli usano il pannello inferiore, così non competono con i controlli superiori; usa Indietro per tornare alla classifica. Su schermi più grandi i dettagli restano nel popup della mappa. La stazione selezionata viene portata sopra i marker vicini con un alone discreto.',
   historyTitle:'Storico',historyHelp:'Le viste 7/30/90 giorni leggono solo le date già presenti nel database SQLite locale. La sincronizzazione aggiunge soltanto lo snapshot ufficiale più recente. Lo snapshot nazionale corrente non viene conservato giorno per giorno: lo storico viene mantenuto solo per gli impianti nelle aree che consulti, così lo spazio occupato resta ridotto.',historyHelpStatic:'La mappa pubblica espone lo storico mobile generato di 7 giorni. I giorni mancanti nella fonte restano mancanti e non vengono mai interpolati.',
   stations:'stazioni',hiddenStale:'nascoste perché vecchie',min:'min',median:'mediana',max:'max',snapshot:'snapshot',registry:'anagrafica',
   localHistory:'storico locale',publicHistory:'storico pubblico',snapshotDays:'giorni snapshot',tracked:'impianti tracciati',syncing:'Scarico lo snapshot MIMIT attuale…',
@@ -177,6 +179,7 @@ function setControlCollapsed(value,persist=true){
  if(persist)persistPrefs()
 }
 function setSidebarCollapsed(value,persist=true){
+ if(value&&isMobileLayout())closeMobileStationDetail();
  document.body.classList.toggle('sidebar-collapsed',value);resizeMapSoon();if(persist)persistPrefs()
 }
 function applyPrefs(){
@@ -193,6 +196,7 @@ function applyLanguage(){
  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>el.placeholder=T(el.dataset.i18nPlaceholder));
  $('langToggle').innerHTML=flagSVG(lang)+`<span>${lang.toUpperCase()}</span>`;
  if($('fitRadiusNav')){$('fitRadiusNav').title=T('fitRadius');$('fitRadiusNav').setAttribute('aria-label',T('fitRadius'))}
+ updateResponsiveControls();
  localStorage.setItem('fuelMapLang',lang);updateCollapsedSummary();render();
  if(lastServerState&&lastServerState.price_date)renderStationStatus(lastServerState)
 }
@@ -318,13 +322,58 @@ async function loadHistory(box,id,fuel,self,days){
  box.innerHTML='<div class="spark-empty">…</div>';
  try{const d=await DATA.getHistory({id,fuel,self,days});const coverageKey=DATA.mode==='static'?'publicCoverage':'localCoverage';box.innerHTML=spark(d.points)+`<div class="spark-meta">${T('daysAvailable',{a:d.observed_days,r:d.requested_days,m:d.missing_days})}</div>`+(d.available_total_days?`<div class="spark-meta">${T(coverageKey,{n:d.available_total_days,a:d.available_start,b:d.available_end})}</div>`:'')}catch(e){box.innerHTML=`<div class="spark-empty">${esc(e.message)}</div>`}
 }
+function activateHistory(root){
+ if(!root)return;
+ const box=root.querySelector('[data-history-id]');if(!box)return;
+ const id=box.dataset.historyId,f=box.dataset.fuel,self=box.dataset.self==='1';
+ const defaultDays=(DATA.capabilities.historyDays||[7])[0]||7;
+ loadHistory(box,id,f,self,defaultDays);
+ root.querySelectorAll('[data-days]').forEach(b=>b.addEventListener('click',()=>loadHistory(box,id,f,self,+b.dataset.days)))
+}
 function popupHtml(s){
  const key=`hist-${String(s.id).replace(/[^a-zA-Z0-9_-]/g,'')}-${Math.random().toString(36).slice(2,6)}`;
  const historyDays=DATA.capabilities.historyDays||[];
  const historyHtml=DATA.capabilities.history&&historyDays.length?`<div class="history-head"><b>${T('historyFast')}</b><span class="history-btns">${historyDays.map(days=>`<button data-days="${days}">${days}d</button>`).join('')}</span></div><div id="${key}" data-history-id="${esc(s.id)}" data-fuel="${esc(s.fuel)}" data-self="${s.isSelf?1:0}"></div>`:'';
  return`<div class="popup-price">${fmt(s.price)}</div><div><b>${esc(s.fuel)}</b> · ${s.isSelf?T('self'):T('served')} · ${T('distanceKm',{n:s.distance_km.toFixed(1)})}</div><div class="popup-meta">${T('station')} ${esc(s.id)}<br/>${esc(s.address)}<br/>${T('snapshot')}: ${esc(s.observed_date)}${s.updated?`<br/>${T('communicated')}: ${esc(s.updated)}`:''}<br/><span class="fresh ${ageClass(stationAgeDays(s))}">${ageText(stationAgeDays(s))}</span></div>${historyHtml}`
 }
-function openStation(id){selectStation(id,{pan:true,openPopup:true,scrollRank:true})}
+function closeMobileStationDetail(){
+ const detail=$('mobileStationDetail');if(!detail)return;
+ detail.hidden=true;detail.innerHTML='';
+ document.body.classList.remove('mobile-detail-open');
+ resizeMapSoon()
+}
+function renderMobileStationDetail(){
+ if(!isMobileLayout()||selectedStationId==null){closeMobileStationDetail();return}
+ const station=shownStations.find(s=>String(s.id)===String(selectedStationId));
+ if(!station){closeMobileStationDetail();return}
+ const detail=$('mobileStationDetail');
+ detail.hidden=false;
+ document.body.classList.add('mobile-detail-open');
+ detail.innerHTML=`<div class="mobile-detail-head"><button class="small-btn" id="mobileDetailBack" type="button" title="${esc(T('backToResults'))}" aria-label="${esc(T('backToResults'))}">‹</button><strong>${esc(T('stationDetails'))}</strong><button class="small-btn" id="mobileDetailHide" type="button" title="${esc(T('hidePanel'))}" aria-label="${esc(T('hidePanel'))}">⌄</button></div><div class="mobile-detail-body">${popupHtml(station)}</div>`;
+ $('mobileDetailBack').addEventListener('click',closeMobileStationDetail);
+ $('mobileDetailHide').addEventListener('click',()=>setSidebarCollapsed(true));
+ activateHistory(detail);
+ resizeMapSoon()
+}
+function openMobileStationDetail(id,{pan=true}={}){
+ selectedStationId=id==null?null:String(id);
+ setSidebarCollapsed(false,false);
+ applySelectionStyles(true);
+ const marker=markerById.get(String(id));
+ if(marker&&pan)map.panTo(marker.getLatLng(),{animate:true});
+ renderMobileStationDetail()
+}
+function openStation(id){
+ if(isMobileLayout()){openMobileStationDetail(id,{pan:true});return}
+ selectStation(id,{pan:true,openPopup:true,scrollRank:true})
+}
+function updateResponsiveControls(){
+ const mobile=isMobileLayout();
+ $('hideSidebar').textContent=mobile?'⌄':'›';
+ $('showSidebar').textContent=mobile?'⌃':'‹';
+ $('hideSidebar').title=T('hidePanel');$('hideSidebar').setAttribute('aria-label',T('hidePanel'));
+ $('showSidebar').title=T('showResults');$('showSidebar').setAttribute('aria-label',T('showResults'));
+}
 
 
 function updateFilterControls(base){
@@ -397,23 +446,22 @@ function render(){
  const values=visible.map(s=>s.price).filter(Number.isFinite).sort((a,b)=>a-b);
  const lo=quantile(values,.05),hi=quantile(values,.95),shownMedian=quantile(values,.5);
 
- if(selectedStationId!=null&&!visible.some(s=>String(s.id)===String(selectedStationId)))selectedStationId=null;
+ if(selectedStationId!=null&&!visible.some(s=>String(s.id)===String(selectedStationId))){selectedStationId=null;closeMobileStationDetail()}
 
  visible.forEach(s=>{
   const marker=L.circleMarker([s.lat,s.lon],{radius:9,color:'#222',weight:.8,fillColor:markerColor(s.price,lo,hi),fillOpacity:.95}).addTo(layer);
   marker._station=s;
   markerById.set(String(s.id),marker);
-  marker.bindPopup(popupHtml(s),{maxWidth:330,autoPan:true,autoPanPaddingTopLeft:L.point(25,190),autoPanPaddingBottomRight:L.point(25,35)});
-  marker.on('click',()=>selectStation(s.id,{scrollRank:true}));
-  marker.on('popupopen',e=>{
-   selectStation(s.id,{scrollRank:true});
-   const el=e.popup.getElement();if(!el)return;
-   const box=el.querySelector('[data-history-id]');if(!box)return;
-   const id=box.dataset.historyId,f=box.dataset.fuel,self=box.dataset.self==='1';
-   const defaultDays=(DATA.capabilities.historyDays||[7])[0]||7;
-   loadHistory(box,id,f,self,defaultDays);
-   el.querySelectorAll('[data-days]').forEach(b=>b.addEventListener('click',()=>loadHistory(box,id,f,self,+b.dataset.days)))
-  })
+  if(isMobileLayout()){
+   marker.on('click',()=>openMobileStationDetail(s.id,{pan:false}))
+  }else{
+   marker.bindPopup(popupHtml(s),{maxWidth:330,autoPan:true,autoPanPaddingTopLeft:L.point(25,190),autoPanPaddingBottomRight:L.point(25,35)});
+   marker.on('click',()=>selectStation(s.id,{scrollRank:true}));
+   marker.on('popupopen',e=>{
+    selectStation(s.id,{scrollRank:true});
+    activateHistory(e.popup.getElement())
+   })
+  }
  });
 
  configureAutoLabels(visible);
@@ -439,6 +487,7 @@ function render(){
 
  renderRanking(visible,filtered,referenceMedian);
  applySelectionStyles(false);
+ if(document.body.classList.contains('mobile-detail-open'))renderMobileStationDetail();
  updateCollapsedSummary()
 }
 
@@ -468,7 +517,7 @@ async function syncNow(){
  if(!DATA.capabilities.sync)return;
  const b=$('sync');b.disabled=true;$('status').textContent=T('syncing');try{const d=await DATA.syncCurrent();$('status').textContent=`${T('syncDone')}: ${d.price_date} · ${T('localHistory')}: ${d.history_days||0} ${T('snapshotDays')}`;await loadStations()}catch(e){$('status').innerHTML=`<span class="warn">${T('syncFailed')}: ${esc(e.message)}</span>`}finally{b.disabled=false}
 }
-function relocate(lat,lon,zoom=13,reload=true,label=null){selectedStationId=null;current={lat,lon};currentLocationLabel=label||`${lat.toFixed(4)}, ${lon.toFixed(4)}`;setSearchGeometry(lat,lon);map.setView([lat,lon],zoom);$('locationSearch').value=currentLocationLabel;persistPrefs();if(reload)loadStations()}
+function relocate(lat,lon,zoom=13,reload=true,label=null){selectedStationId=null;closeMobileStationDetail();current={lat,lon};currentLocationLabel=label||`${lat.toFixed(4)}, ${lon.toFixed(4)}`;setSearchGeometry(lat,lon);map.setView([lat,lon],zoom);$('locationSearch').value=currentLocationLabel;persistPrefs();if(reload)loadStations()}
 function useLocation(){if(!navigator.geolocation){$('status').textContent=T('browserGeoUnavailable');return}navigator.geolocation.getCurrentPosition(p=>relocate(p.coords.latitude,p.coords.longitude,14,true,T('currentLocation')),e=>$('status').textContent=`${T('locationDenied')}: ${e.message}`)}
 async function searchLocation(query){
  const results=$('searchResults');results.classList.add('show');results.innerHTML=`<div class="search-item">${T('searching')}</div>`;
@@ -499,8 +548,9 @@ function bindEvents(){
  $('helpBtn').addEventListener('click',()=>$('helpModal').classList.add('show'));$('closeHelp').addEventListener('click',()=>$('helpModal').classList.remove('show'));$('helpModal').addEventListener('click',e=>{if(e.target===$('helpModal'))$('helpModal').classList.remove('show')});
  $('collapseControls').addEventListener('click',()=>setControlCollapsed(!$('controlBody').classList.contains('collapsed')));$('hideSidebar').addEventListener('click',()=>setSidebarCollapsed(true));$('showSidebar').addEventListener('click',()=>setSidebarCollapsed(false));
  map.on('click',e=>relocate(e.latlng.lat,e.latlng.lng,map.getZoom(),true));map.on('zoomend',()=>{configureAutoLabels(shownStations);updateCustomScale();persistPrefs()});map.on('moveend',updateCustomScale);map.on('resize',updateCustomScale);
- document.addEventListener('keydown',e=>{const tag=(e.target&&e.target.tagName||'').toLowerCase(),typing=tag==='input'||tag==='select'||tag==='textarea';if(e.key==='Escape'){$('helpModal').classList.remove('show');$('searchResults').classList.remove('show');map.closePopup();return}if(typing)return;const k=e.key.toLowerCase();if(k==='/'){e.preventDefault();$('locationSearch').focus();return}if(k==='h'||e.key==='?'){$('helpModal').classList.add('show');return}if(k==='r'){loadStations();return}if(k==='l'){useLocation();return}if(e.key==='0'){map.setView([current.lat,current.lon],map.getZoom(),{animate:true});return}if(e.key==='+'||e.key==='='){map.zoomIn();return}if(e.key==='-'){map.zoomOut();return}const keyDir={w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'}[k];if(keyDir){e.preventDefault();pan(keyDir)}});
+ document.addEventListener('keydown',e=>{const tag=(e.target&&e.target.tagName||'').toLowerCase(),typing=tag==='input'||tag==='select'||tag==='textarea';if(e.key==='Escape'){$('helpModal').classList.remove('show');$('searchResults').classList.remove('show');closeMobileStationDetail();map.closePopup();return}if(typing)return;const k=e.key.toLowerCase();if(k==='/'){e.preventDefault();$('locationSearch').focus();return}if(k==='h'||e.key==='?'){$('helpModal').classList.add('show');return}if(k==='r'){loadStations();return}if(k==='l'){useLocation();return}if(e.key==='0'){map.setView([current.lat,current.lon],map.getZoom(),{animate:true});return}if(e.key==='+'||e.key==='='){map.zoomIn();return}if(e.key==='-'){map.zoomOut();return}const keyDir={w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'}[k];if(keyDir){e.preventDefault();pan(keyDir)}});
  document.addEventListener('click',e=>{if(!e.target.closest('.search-row'))$('searchResults').classList.remove('show');if(!e.target.closest('#filterPopover')&&!e.target.closest('#filterToggle'))$('filterPopover').hidden=true})
+ MOBILE_LAYOUT.addEventListener('change',()=>{closeMobileStationDetail();updateResponsiveControls();render();resizeMapSoon()})
 }
 
-applyPrefs();applyProviderCapabilities();setSearchGeometry(current.lat,current.lon);bindEvents();applyLanguage();updateCustomScale();loadStations();
+applyPrefs();applyProviderCapabilities();setSearchGeometry(current.lat,current.lon);bindEvents();updateResponsiveControls();applyLanguage();updateCustomScale();loadStations();

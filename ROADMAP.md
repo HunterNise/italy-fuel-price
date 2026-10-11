@@ -15,26 +15,20 @@ on narrow screens instead of only compressing the desktop layout.
 
 ### Mobile interaction model
 
-- Redesign the mobile ranking/sidebar as a touch-friendly bottom sheet with
-  predictable collapsed/peek, partial, and expanded states.
-- On narrow screens, use the mobile detail sheet for selected-station details
-  instead of allowing the ranking panel, top controls, and a large Leaflet popup
-  to compete for vertical space.
-- Fix the current mobile station-selection/docking bug where opening a station
-  with the bottom panel docked can move the top controls out of view and leave
-  the docking control ineffective.
-- Keep explicit tap/click controls as an accessible fallback even if swipe/drag
-  gestures are added.
-- Remove narrow-layout whitespace and control-position glitches, including top
-  panel empty space and dock/undock controls moving to surprising positions.
-- Avoid scroll traps between the map, details/ranking sheet, dialogs, and page
-  itself.
-- Respect mobile safe areas and use touch-sized controls suitable for phones.
-- Test portrait phone, landscape phone, tablet, and desktop layouts as separate
-  interaction targets rather than assuming one responsive layout covers all of
-  them.
-- Add focused browser-level responsive regression checks for important
-  interactions that DOM/unit tests cannot adequately cover.
+The initial tap-driven mobile state is implemented in 0.9.8: the lower sheet
+owns either ranking results or station details, desktop popups are preserved,
+and the known station-selection/docking failure is addressed.
+
+Remaining work:
+
+- Add optional swipe/drag gestures and predictable peek/partial/expanded sheet
+  positions while keeping explicit tap controls as the accessible fallback.
+- Continue refining scroll ownership between the map, details/ranking sheet,
+  dialogs, and page itself.
+- Test and tune portrait phone, landscape phone, tablet, and desktop layouts as
+  separate interaction targets.
+- Add focused browser-level responsive regression checks for interactions that
+  DOM/unit tests cannot adequately cover.
 
 ### Help and secondary information
 

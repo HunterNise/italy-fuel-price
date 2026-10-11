@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>MIMIT fuel prices</title>
 <link rel="icon" href="data:,"/>
 <link rel="stylesheet" href="./static/vendor/leaflet/leaflet.css"/>
-<link rel="stylesheet" href="./static/styles.css?v=0.9.7"/>
+<link rel="stylesheet" href="./static/styles.css?v=0.9.8"/>
 </head>
 <body>
 <div id="map"></div>
@@ -111,6 +111,7 @@
       <div id="distChart"></div>
     </div>
   </div>
+  <section id="mobileStationDetail" class="mobile-detail" hidden aria-live="polite"></section>
   <div id="rankList"></div>
   <div class="rank-footer" id="rankFooter"></div>
 </div>
@@ -145,7 +146,7 @@
     <p data-i18n="guideData">Choose fuel, service mode and freshness. Use Filters for maximum price/distance constraints, then sort the remaining stations and optionally limit the displayed result with Show. Map markers, ranking rows and the histogram always use the same final station subset.</p>
 
     <h3 data-i18n="guideReadTitle">Reading and selecting stations</h3>
-    <p data-i18n="guideRead">Click a map marker or ranking row to select the same station in both views. The selected station is brought above nearby markers with a subtle halo. Use the ⛶ map button to centre and maximize the active search radius in the current map viewport. Price labels appear automatically when the map is sufficiently close, or when only a small number of stations is shown.</p>
+    <p data-i18n="guideRead">Click a map marker or ranking row to select the same station in both views. On phones, station details use the lower sheet so they do not compete with the top controls; use Back to return to the ranking. On larger screens, station details open in the map popup. The selected station is brought above nearby markers with a subtle halo.</p>
 
     <h3 data-i18n="historyTitle">History</h3>
     <p data-i18n="historyHelp">The 7/30/90-day views read only dates already stored in the local SQLite database. Sync adds the newest official snapshot only. The current nationwide snapshot is not retained day-by-day; history is kept only for stations in areas you view, so disk use stays small.</p>
@@ -168,8 +169,8 @@
 </div>
 
 <script src="./static/vendor/leaflet/leaflet.js"></script>
-<script src="./static/runtime-config.js?v=0.9.7"></script>
-<script src="./static/data-provider.js?v=0.9.7"></script>
-<script src="./static/app.js?v=0.9.7"></script>
+<script src="./static/runtime-config.js?v=0.9.8"></script>
+<script src="./static/data-provider.js?v=0.9.8"></script>
+<script src="./static/app.js?v=0.9.8"></script>
 </body>
 </html>

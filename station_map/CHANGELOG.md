@@ -11,6 +11,17 @@ history**. The earlier `v1`…`v8` ZIP names were development labels rather than
 formal semantic-version tags. SemVer becomes the canonical station-map version
 scheme from 0.8.2 onward.
 
+## [0.9.8] - 2026-10-11
+
+### Changed
+- Added an explicit tap-driven mobile results/detail state: station selection on narrow screens now opens details inside the lower sheet instead of a competing Leaflet popup.
+- Mobile bottom-sheet controls now keep stable bottom-screen placement, use phone-safe-area spacing, and expose larger touch targets.
+- Desktop marker popup behavior remains unchanged.
+
+### Fixed
+- Fixed the phone interaction where selecting a station while the lower panel was docked could make the top controls effectively inaccessible and leave the panel control unusable.
+- Reduced narrow-screen top-panel whitespace and prevented the reopen control from jumping to the upper-right corner.
+
 ## [0.9.7] - 2026-10-05
 
 ### Added
