@@ -419,6 +419,24 @@ def write_history(output: Path, state: dict, records: list[dict], price_date: st
     return metadata
 
 
+def validate_source_dates(registry_date: str, price_date: str) -> None:
+    try:
+        registry = date.fromisoformat(registry_date)
+        prices = date.fromisoformat(price_date)
+    except ValueError as exc:
+        raise BuildError(
+            "Invalid MIMIT source date: "
+            f"registry={registry_date!r}, prices={price_date!r}"
+        ) from exc
+
+    if registry != prices:
+        raise BuildError(
+            "MIMIT source-date mismatch: "
+            f"registry {registry_date} != prices {price_date}; "
+            "refusing to publish a mixed-vintage snapshot"
+        )
+
+
 def load_sources(args, repo_root: Path):
     mimit, price_url, station_url = import_mimit(repo_root)
     if bool(args.registry_file) != bool(args.price_file):
@@ -492,6 +510,7 @@ def load_locality_source(args):
 def build(args) -> dict:
     repo_root = find_repo_root(args.repo_root)
     source = load_sources(args, repo_root)
+    validate_source_dates(source["registry_date"], source["price_date"])
     locality_source = load_locality_source(args)
     records, counts = normalize_current(source["station_rows"], source["price_rows"])
     validate_snapshot(counts)

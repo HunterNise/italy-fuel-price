@@ -108,6 +108,17 @@ class NormalizationTests(unittest.TestCase):
             builder.validate_snapshot(counts)
 
 
+class SourceDateTests(unittest.TestCase):
+    def test_matching_source_dates_are_accepted(self):
+        builder.validate_source_dates("2026-10-10", "2026-10-10")
+
+    def test_mixed_source_dates_are_rejected(self):
+        with self.assertRaises(builder.BuildError) as ctx:
+            builder.validate_source_dates("2026-10-09", "2026-10-10")
+        self.assertIn("source-date mismatch", str(ctx.exception))
+        self.assertIn("mixed-vintage", str(ctx.exception))
+
+
 class PlaceTests(unittest.TestCase):
     def test_place_coordinate_uses_median_station_position(self):
         rows = [

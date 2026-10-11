@@ -79,9 +79,9 @@ Remaining browser QoL:
   Treat this as a pragmatic mitigation for the public-repository 60-day
   inactivity rule; if GitHub still disables the schedule, fall back to manual
   re-enable or an external dispatcher.
-- Consider rejecting a new public deployment when registry and price snapshots
-  have inconsistent source dates, leaving the previous known-good deployment
-  active instead of publishing a mixed-vintage snapshot.
+- The static builder rejects registry/price source-date mismatches before
+  generated output or rolling-history state is updated, leaving the previous
+  known-good public deployment active.
 - Preserve the current failure behavior where build/validation problems do not
   replace a known-good public site.
 - Keep generated current data and rolling history state out of the source

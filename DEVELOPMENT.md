@@ -99,6 +99,12 @@ rounded distance. Result ordering is not itself a parity failure because tiny
 coordinate-rounding differences can legitimately swap equal-price,
 near-equidistant stations without changing the result content.
 
+Before any public data output or rolling-history state is updated,
+`build_web_data.py` also requires the MIMIT registry and price extraction dates
+to match exactly. A mixed-vintage bundle fails the build early, so the deploy
+job never replaces the previous known-good Pages site and no mixed-date history
+snapshot is persisted.
+
 The network-independent unit suite also contains synthetic cross-cell parity
 cases, so boundary regressions fail normal repository checks.
 
